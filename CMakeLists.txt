@@ -12,10 +12,12 @@ endif()
 project ("GameEngine")
 
 # Add source to this project's executable.
-add_executable (GameEngine "GameEngine.cpp" "GameEngine.h")
+add_executable (runtime "src/runtime/main.cpp" "include/render_backends/compatibility/core.h" "include/render_backends/progressive/core.h" "src/render_backends/compatibility/core.cpp" "src/render_backends/progressive/core.cpp")
+add_executable (editor "src/editor/main.cpp" "include/render_backends/compatibility/core.h" "include/render_backends/progressive/core.h" "src/render_backends/compatibility/core.cpp" "src/render_backends/progressive/core.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET GameEngine PROPERTY CXX_STANDARD 20)
+  set_property(TARGET runtime PROPERTY CXX_STANDARD 20)
+  set_property(TARGET editor PROPERTY CXX_STANDARD 20)
 endif()
 
 # --- VULKAN DEPENDENCY ---
@@ -30,4 +32,5 @@ find_package(SDL2 CONFIG REQUIRED)
 
 find_package(assimp CONFIG REQUIRED)
 
-target_link_libraries(GameEngine PRIVATE SDL2::SDL2 SDL2::SDL2main Vulkan::Vulkan assimp::assimp)
+target_link_libraries(runtime PRIVATE SDL2::SDL2 SDL2::SDL2main Vulkan::Vulkan assimp::assimp)
+target_link_libraries(editor PRIVATE SDL2::SDL2 SDL2::SDL2main Vulkan::Vulkan assimp::assimp)
