@@ -1,9 +1,75 @@
 // See .h file for comment explanations of === header === sections
 #include "Engine/render_backends/render_backend.h"
+#include <iostream>
 
+bool RenderBackend::start_window(string window_title, int window_width, int window_height) {
+	// This function is the function which starts the end user's application.
+	
+	// === Start SDL2 ===
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		std::cerr << "SDL_Init failed: " << SDL_GetError() << "\n";
+		return false;
+	}
+
+	this->sdl_window = SDL_CreateWindow(
+		window_title.c_str(),
+		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+		window_width, window_height,
+		SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
+	);
+
+	if (!this->sdl_window) {
+		std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << "\n";
+		SDL_Quit();
+		return false;
+	}
+
+	// === Start the loop that renders the game ===
+	this->start_game_loop();
+
+	SDL_DestroyWindow(this->sdl_window);
+	SDL_Quit();
+	return true;
+}
+
+void RenderBackend::start_game_loop() {
+
+	// Initialize render backend api
+	this->before_game_loop();
+
+	Uint32 lastTime = SDL_GetTicks();
+
+	// Start loop
+	this->window_running = true;
+	while (this->window_running) {
+		
+		// Get delta_time
+		
+		Uint32 currentTime = SDL_GetTicks();
+		
+		this->delta_time = (currentTime - lastTime) / 1000.0f; // seconds
+		
+		lastTime = currentTime;
+		
+		// SDL Event Handling
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			this->SDL_event_handler(event);
+		}
+
+		this->execute_on_draw_update_callbacks();
+		
+		// Update the game
+		this->update_game();
+	}
+	
+	// Deinitialize render backend api
+	this->after_game_loop();
+}
 
 // Simple functions like getters and setters go at the bottom.
 // Organize from most complex at the top to least complex at the bottom.
+// Unless it makes more sense to put a specific function above another.
 
 // === Callback Functions ===
 
