@@ -2,6 +2,11 @@
 #include "Engine/render_backends/render_backend.h"
 #include <iostream>
 
+// CODE FORMATTING INFORMATION:
+// Simple functions like getters and setters go at the bottom.
+// Organize from most complex at the top to least complex at the bottom.
+// Unless it makes more sense to put a specific function above another.
+
 bool RenderBackend::start_window(string window_title, int window_width, int window_height) {
 	// This function is the function which starts the end user's application.
 	
@@ -28,7 +33,9 @@ bool RenderBackend::start_window(string window_title, int window_width, int wind
 	this->start_game_loop();
 
 	SDL_DestroyWindow(this->sdl_window);
+	
 	SDL_Quit();
+
 	return true;
 }
 
@@ -66,10 +73,6 @@ void RenderBackend::start_game_loop() {
 	// Deinitialize render backend api
 	this->after_game_loop();
 }
-
-// Simple functions like getters and setters go at the bottom.
-// Organize from most complex at the top to least complex at the bottom.
-// Unless it makes more sense to put a specific function above another.
 
 // === Callback Functions ===
 
