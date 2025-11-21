@@ -3,7 +3,7 @@
 #include <functional>
 #include <unordered_map>
 #include <SDL2/SDL.h>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <string>
 
 using std::string;
