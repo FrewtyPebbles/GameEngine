@@ -165,9 +165,9 @@ private:
 // === VULKAN ===
 	
 	// required vulkan attributes
-	VkInstance instance = VK_NULL_HANDLE;
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
-	VkPhysicalDevice physical_device = VK_NULL_HANDLE;
-	VkDevice device = VK_NULL_HANDLE;
+	vk::Instance instance = vk::Instance(nullptr);
+	vk::SurfaceKHR surface = vk::SurfaceKHR(nullptr);
+	vk::PhysicalDevice physicalDevice = vk::PhysicalDevice(nullptr);
+	vk::Device device = vk::Device(nullptr);
 
 };
