@@ -60,6 +60,8 @@ private:
 	bool vk_create_instance();
 	/// returns false on failure
 
+	bool vk_cleanup();
+
 	void initialize_vulkan();
 
 	bool vk_create_device();

@@ -65,7 +65,7 @@ void RenderBackend::start_game_loop() {
 		// SDL Event Handling
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			this->SDL_event_handler(event);
+			this->SDL_forward_event(event);
 		}
 
 		this->execute_on_draw_update_callbacks();
@@ -78,12 +78,22 @@ void RenderBackend::start_game_loop() {
 	this->after_game_loop();
 }
 
-// !!! TEMP FUNCTIONS SO I CAN BUILD !!!
-void RenderBackend::SDL_event_handler(SDL_Event){}
-void RenderBackend::execute_on_draw_update_callbacks(){}
-// !!! TEMP FUNCTIONS SO I CAN BUILD !!!
+// === SDL EVENT FORWARDER ===
+
+void RenderBackend::SDL_forward_event(SDL_Event event) {
+	if (event.type == SDL_QUIT) {
+		this->window_running = false;
+	}
+	// TODO: Forward events to an event handling system
+}
 
 // === Callback Functions ===
+
+void RenderBackend::execute_on_draw_update_callbacks() {
+	for (const auto& [nodeID, callback] : this->on_draw_update_callbacks) {
+		callback(this->delta_time);
+	}
+}
 
 void RenderBackend::add_on_draw_update_callback(int nodeID, std::function<void(float)> callback) {
 	this->on_draw_update_callbacks.insert_or_assign(nodeID, callback);

@@ -166,8 +166,8 @@ private:
 	/// Initializes the game state and starts the game loop which calls update_game.
 	// Loads in the initial scene file.
 
-	void SDL_event_handler(SDL_Event event);
-	/// This passes SDL_events to their hooks or wherever they need to go.
+	void SDL_forward_event(SDL_Event event);
+	/// This forwards `SDL_Event`s to their hooks or wherever they need to go.
 
 	void start_fixed_update_game_loop();
 	/// Initializes the fixed update loop and starts it, calling "fixed_update_game" every

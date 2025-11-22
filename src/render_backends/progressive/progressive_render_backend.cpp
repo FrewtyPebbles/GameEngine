@@ -35,6 +35,9 @@ void ProgressiveRenderBackend::before_game_loop() {
 
 void ProgressiveRenderBackend::after_game_loop() {
 	// This is where vulkan is de-initialized.
+	if (!this->vk_cleanup()) {
+		throw std::runtime_error("Failed to clean up vulkan.");
+	}
 }
 
 void ProgressiveRenderBackend::update_game() {
@@ -45,6 +48,11 @@ void ProgressiveRenderBackend::initialize_vulkan() {
 	if (!this->vk_create_instance()) {
 		throw std::runtime_error("Failed to create vulkan instance.");
 	}
+}
+
+bool ProgressiveRenderBackend::vk_cleanup() {
+	this->vk_instance.destroy();
+	return true;
 }
 
 bool ProgressiveRenderBackend::vk_create_instance() {
