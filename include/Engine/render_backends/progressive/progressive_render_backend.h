@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/render_backends/render_backend.h"
+#include <vulkan/vulkan.hpp>
 
 // --- ProgressiveRenderBackend --- 
 // This is the most cutting edge rendering backend in the engine.
@@ -20,7 +21,16 @@ public:
 // These include things like constructors, destructors and operators.
 // ---
 
-	ProgressiveRenderBackend(Uint32 sdl_only_window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+	ProgressiveRenderBackend(
+		string application_name,
+		string application_description,
+		vector<string> application_authors,
+		int application_version_major,
+		int application_version_minor,
+		int application_version_patch,
+		string application_version_identifier,
+		Uint32 sdl_only_window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN
+	);
 	/// sdl_window_flags must be set in every constructor to include `SDL_WINDOW_VULKAN`
 
 //////////////////////
@@ -47,12 +57,17 @@ private:
 // Overload these functions depending on the render engine	
 // ---
 
-	bool create_device();
+	bool vk_create_instance();
+	/// returns false on failure
+
+	void initialize_vulkan();
+
+	bool vk_create_device();
 
 	// = Base Functions =
 	// ---
-	bool pick_physical_device();
-	void bind_to_window(SDL_Window*);
+	bool vk_pick_physical_device();
+	void vk_bind_to_window(SDL_Window*);
 
 //////////////////////
 ///// ATTRIBUTES /////
@@ -61,9 +76,9 @@ private:
 // === VULKAN ===
 
 	// required vulkan attributes
-	vk::Instance vk_instance = vk::Instance(nullptr);
-	vk::SurfaceKHR kv_surface = vk::SurfaceKHR(nullptr);
-	vk::PhysicalDevice vk_physical_device = vk::PhysicalDevice(nullptr);
-	vk::Device vk_device = vk::Device(nullptr);
+	vk::Instance vk_instance;
+	vk::SurfaceKHR kv_surface;
+	vk::PhysicalDevice vk_physical_device;
+	vk::Device vk_device;
 
 };

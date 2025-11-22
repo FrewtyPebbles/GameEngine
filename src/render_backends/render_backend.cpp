@@ -1,6 +1,7 @@
 // See .h file for comment explanations of === header === sections
 #include "Engine/render_backends/render_backend.h"
 #include <iostream>
+#include <stdexcept>
 
 // CODE FORMATTING INFORMATION:
 // Simple functions like getters and setters go at the bottom.
@@ -15,7 +16,7 @@ bool RenderBackend::start_window(string window_title, int window_width, int wind
 	
 	// === Start SDL2 ===
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-		std::cerr << "SDL_Init failed: " << SDL_GetError() << "\n";
+		throw std::runtime_error(string("SDL_Init failed: ") + SDL_GetError());
 		return false;
 	}
 
@@ -27,8 +28,8 @@ bool RenderBackend::start_window(string window_title, int window_width, int wind
 	);
 
 	if (!this->sdl_window) {
-		std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << "\n";
 		SDL_Quit();
+		throw std::runtime_error(string("SDL_Init failed: ") + SDL_GetError());
 		return false;
 	}
 
