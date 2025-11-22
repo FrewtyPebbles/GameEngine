@@ -1,5 +1,7 @@
 #pragma once
 
+#define SDL_MAIN_HANDLED
+
 #include <functional>
 #include <unordered_map>
 #include <SDL2/SDL.h>
@@ -37,16 +39,6 @@ public:
 
 	void close_window();
 
-// ==== Render Functions ====
-// Overload these functions depending on the render engine	
-// ---
-
-	bool virtual create_device() = 0;
-
-// = Base Functions =
-// ---
-	bool pick_physical_device();
-	void bind_to_window(SDL_Window*);
 
 // === Game Loop Functions ===
 // These are functions related to the game loop.
@@ -186,13 +178,5 @@ private:
 
 	// = Events =
 	SDL_Event sdl_event;
-
-// === VULKAN ===
-	
-	// required vulkan attributes
-	vk::Instance instance = vk::Instance(nullptr);
-	vk::SurfaceKHR surface = vk::SurfaceKHR(nullptr);
-	vk::PhysicalDevice physicalDevice = vk::PhysicalDevice(nullptr);
-	vk::Device device = vk::Device(nullptr);
 
 };

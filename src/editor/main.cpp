@@ -7,7 +7,7 @@
 
 using std::cout, std::endl;
 
-int main()
+int main(int argc, char** argv)
 {
 	cout << "Editor starting..." << endl;
 	return 0;

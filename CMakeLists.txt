@@ -22,6 +22,10 @@ list(REMOVE_ITEM RUNTIME_SOURCES
     "${CMAKE_SOURCE_DIR}/src/editor/main.cpp"
 )
 
+foreach(file ${RUNTIME_SOURCES})
+    message(STATUS "Found source: ${file}")
+endforeach()
+
 # --- EDITOR SOURCES ---
 
 file(GLOB_RECURSE EDITOR_SOURCES CONFIGURE_DEPENDS
@@ -72,10 +76,10 @@ find_package(glm CONFIG REQUIRED)
 # --- LINK DEPENDENCIES ---
 
 target_link_libraries(runtime PRIVATE
-    SDL2::SDL2 SDL2::SDL2main Vulkan::Vulkan
+    SDL2::SDL2 Vulkan::Vulkan
     assimp::assimp glm::glm
 )
 target_link_libraries(editor PRIVATE
-    SDL2::SDL2 SDL2::SDL2main Vulkan::Vulkan
+    SDL2::SDL2 Vulkan::Vulkan
     assimp::assimp glm::glm
 )
