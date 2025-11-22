@@ -46,3 +46,5 @@ out/
 CMakeUserPresets.json
 .vs/
 CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
