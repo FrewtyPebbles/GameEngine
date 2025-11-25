@@ -3,6 +3,18 @@
 #include "Engine/render_backends/render_backend.h"
 #include <vulkan/vulkan.hpp>
 
+const vector<const char*> vkVALIDATION_LAYERS = {
+	"VK_LAYER_KHRONOS_validation"
+};
+
+
+#ifdef NDEBUG
+	const bool vkENABLE_VALIDATION_LAYERS = false;
+#else
+	const bool vkENABLE_VALIDATION_LAYERS = true;
+#endif
+
+
 // --- ProgressiveRenderBackend --- 
 // This is the most cutting edge rendering backend in the engine.
 // It has the newest features and the worst cross platform support.
@@ -59,6 +71,9 @@ private:
 
 	bool vk_create_instance();
 	/// returns false on failure
+
+	bool vk_check_validation_layer_support();
+	/// checks that all of the validation layers are supported
 
 	bool vk_cleanup();
 

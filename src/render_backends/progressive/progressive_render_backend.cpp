@@ -56,6 +56,10 @@ bool ProgressiveRenderBackend::vk_cleanup() {
 }
 
 bool ProgressiveRenderBackend::vk_create_instance() {
+	if (vkENABLE_VALIDATION_LAYERS && !this->vk_check_validation_layer_support()) {
+		throw std::runtime_error("validation layers requested, but not available!");
+	}
+
 	// Set vulkan ApplicationInfo
 	vk::ApplicationInfo vk_ApplicationInfo(
 		this->application_name.c_str(),
@@ -100,6 +104,31 @@ bool ProgressiveRenderBackend::vk_create_instance() {
 	if (vk::createInstance(&vk_InstanceCreateInfo, nullptr, &this->vk_instance) != vk::Result::eSuccess) {
 		throw std::runtime_error("Failed to create Vulkan instance.");
 		return false;
+	}
+
+	return true;
+}
+
+bool ProgressiveRenderBackend::vk_check_validation_layer_support() {
+	uint32_t layerCount;
+	vk::enumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	vector<vk::LayerProperties> availableLayers(layerCount);
+
+	vk::enumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	for (const char* layerName : vkVALIDATION_LAYERS) {
+		bool layerFound = false;
+
+		for (const auto& layerProperties : availableLayers) {
+			if (strcmp(layerName, layerProperties.layerName) == 0) {
+				layerFound = true;
+				break;
+			}
+		}
+		if (!layerFound) {
+			return false;
+		}
 	}
 
 	return true;
