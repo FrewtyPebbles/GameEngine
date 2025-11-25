@@ -22,10 +22,6 @@ list(REMOVE_ITEM RUNTIME_SOURCES
     "${CMAKE_SOURCE_DIR}/src/editor/main.cpp"
 )
 
-foreach(file ${RUNTIME_SOURCES})
-    message(STATUS "Found source: ${file}")
-endforeach()
-
 # --- EDITOR SOURCES ---
 
 file(GLOB_RECURSE EDITOR_SOURCES CONFIGURE_DEPENDS

@@ -80,11 +80,15 @@ private:
 	bool vk_create_instance();
 	/// returns false on failure
 
+	vector<const char*> vk_get_required_extensions();
+
 	bool vk_pick_physical_device();
 
 	bool vk_create_device();
 
 	bool vk_cleanup();
+
+
 
 	// = Validation = 
 	// ---
@@ -92,6 +96,17 @@ private:
 	bool vk_check_validation_layer_support();
 	/// checks that all of the validation layers are supported
 
+	vk::DebugUtilsMessengerCreateInfoEXT vk_create_debug_messenger_create_info();
+
+	bool vk_setup_debug_messenger();
+
+	static VKAPI_ATTR vk::Bool32 VKAPI_CALL vk_handle_debug_messages(
+		vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
+		vk::DebugUtilsMessageTypeFlagsEXT message_type,
+		const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data,
+		void* logger // The logger instance is passed here.
+	);
+	/// This is a vulkan callback function for handling validation layer / debug messages
 
 	void vk_bind_to_window(SDL_Window*);
 
@@ -106,5 +121,7 @@ private:
 	vk::SurfaceKHR kv_surface;
 	vk::PhysicalDevice vk_physical_device;
 	vk::Device vk_device;
+	vk::DebugUtilsMessengerEXT vk_debug_messenger;
 
 };
+

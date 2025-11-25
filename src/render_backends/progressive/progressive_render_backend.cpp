@@ -1,5 +1,6 @@
 #include "Engine/render_backends/progressive/progressive_render_backend.h"
 #include "Engine/constants.h"
+#include "Engine/render_backends/shared/vulkan/extensions.h"
 #include <SDL2/SDL_vulkan.h>
 #include <iostream>
 #include <stdexcept>
@@ -51,12 +52,19 @@ bool ProgressiveRenderBackend::initialize_vulkan() {
 		throw std::runtime_error("Failed to create vulkan instance.");
 	}
 
+	if (!this->vk_setup_debug_messenger()) {
+		throw std::runtime_error("Failed to set up debug messenger.");
+	}
+
 	if (!this->vk_pick_physical_device()) {
 		throw std::runtime_error("Failed to pick physical device.");
 	}
 }
 
 bool ProgressiveRenderBackend::vk_cleanup() {
+	if (vkENABLE_VALIDATION_LAYERS) {
+		VK_Extension::destroy_debug_utils_messenger_ext(this->vk_instance, this->vk_debug_messenger, nullptr);
+	}
 	this->vk_instance.destroy();
 	return true;
 }
@@ -79,31 +87,37 @@ bool ProgressiveRenderBackend::vk_create_instance() {
 		VK_API_VERSION_1_0
 	);
 
-	// Get sdl extensions
-	uint32_t sdl_ExtensionCount = 0;
-
-	if (!SDL_Vulkan_GetInstanceExtensions(this->sdl_window, &sdl_ExtensionCount, nullptr)) {
-		throw std::runtime_error("Failed to get number of SDL Vulkan instance extensions.");
-		return false;
-	}
-	
-	std::vector<const char*> sdl_Extensions(sdl_ExtensionCount);
-
-	if (!SDL_Vulkan_GetInstanceExtensions(this->sdl_window, &sdl_ExtensionCount, sdl_Extensions.data())) {
-		throw std::runtime_error("Failed to get SDL Vulkan instance extensions.");
-		return false;
-	}
+	// Get extensions
+	vector<const char*> extensions = this->vk_get_required_extensions();
 
 	// Construct InstanceCreateInfo
 
+	vk::DebugUtilsMessengerCreateInfoEXT vk_DebugMessengerCreateInfo;
+	/// This is a debug messenger taht will let us see validation layer messages
+	// for the vulkan instance creation vulkan functions.
+
 	vk::InstanceCreateFlags vk_InstanceCreateFlags{};
 
-	vk::InstanceCreateInfo vk_InstanceCreateInfo(
-		vk_InstanceCreateFlags,
-		&vk_ApplicationInfo,
-		{},
-		sdl_Extensions
-	);
+	vk::InstanceCreateInfo vk_InstanceCreateInfo;
+
+	if (vkENABLE_VALIDATION_LAYERS) {
+		vk_DebugMessengerCreateInfo = this->vk_create_debug_messenger_create_info();
+		
+		vk_InstanceCreateInfo = vk::InstanceCreateInfo(
+			vk_InstanceCreateFlags,
+			&vk_ApplicationInfo,
+			vkVALIDATION_LAYERS,
+			extensions,
+			(vk::DebugUtilsMessengerCreateInfoEXT*)&vk_DebugMessengerCreateInfo
+		);
+	} else {
+		vk_InstanceCreateInfo = vk::InstanceCreateInfo(
+			vk_InstanceCreateFlags,
+			&vk_ApplicationInfo,
+			{},
+			extensions
+		);
+	}
 
 	// create the vulkan instance
 
@@ -113,6 +127,29 @@ bool ProgressiveRenderBackend::vk_create_instance() {
 	}
 
 	return true;
+}
+
+vector<const char*> ProgressiveRenderBackend::vk_get_required_extensions() {
+	// Get sdl extensions
+	uint32_t sdl_ExtensionCount = 0;
+
+	if (!SDL_Vulkan_GetInstanceExtensions(this->sdl_window, &sdl_ExtensionCount, nullptr)) {
+		throw std::runtime_error("Failed to get number of SDL Vulkan instance extensions.");
+	}
+
+	vector<const char*> sdl_Extensions(sdl_ExtensionCount);
+
+	if (!SDL_Vulkan_GetInstanceExtensions(this->sdl_window, &sdl_ExtensionCount, sdl_Extensions.data())) {
+		throw std::runtime_error("Failed to get SDL Vulkan instance extensions.");
+	}
+
+	vector<const char*> extensions(sdl_Extensions);
+
+	if (vkENABLE_VALIDATION_LAYERS) {
+		extensions.push_back(vk::EXTDebugUtilsExtensionName);
+	}
+
+	return extensions;
 }
 
 bool ProgressiveRenderBackend::vk_pick_physical_device() {
@@ -133,6 +170,7 @@ bool ProgressiveRenderBackend::vk_pick_physical_device() {
 	
 	return true;
 }
+
 
 bool ProgressiveRenderBackend::vk_check_validation_layer_support() {
 	uint32_t layerCount;
@@ -157,4 +195,46 @@ bool ProgressiveRenderBackend::vk_check_validation_layer_support() {
 	}
 
 	return true;
+}
+
+vk::DebugUtilsMessengerCreateInfoEXT ProgressiveRenderBackend::vk_create_debug_messenger_create_info() {
+	vk::DebugUtilsMessengerCreateFlagsEXT vk_flags{};
+
+	return vk::DebugUtilsMessengerCreateInfoEXT(
+		vk_flags,
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+		vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding |
+		vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+		vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+		vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+		this->vk_handle_debug_messages//, logger_instance
+	);
+}
+
+bool ProgressiveRenderBackend::vk_setup_debug_messenger() {
+	if (!vkENABLE_VALIDATION_LAYERS)
+		return true;
+
+	auto vk_DebugUtilsMessangerCreateInfoEXT = this->vk_create_debug_messenger_create_info();
+
+	if (VK_Extension::create_debug_utils_messenger_ext(this->vk_instance, &vk_DebugUtilsMessangerCreateInfoEXT, nullptr, &this->vk_debug_messenger) != vk::Result::eSuccess) {
+		throw std::runtime_error("failed to set up debug messenger!");
+		return false;
+	}
+
+	return true;
+}
+
+VKAPI_ATTR vk::Bool32 VKAPI_CALL ProgressiveRenderBackend::vk_handle_debug_messages(
+	vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
+	vk::DebugUtilsMessageTypeFlagsEXT message_type,
+	const vk::DebugUtilsMessengerCallbackDataEXT* p_callback_data,
+	void* logger
+) {
+	std::cerr << "validation layer: " << p_callback_data->pMessage << std::endl;
+	
+	return vk::False;
 }
