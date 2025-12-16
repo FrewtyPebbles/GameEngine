@@ -71,6 +71,7 @@ bool ProgressiveRenderBackend::vk_cleanup() {
 	if (vkENABLE_VALIDATION_LAYERS) {
 		VK_Extension::destroy_debug_utils_messenger_ext(this->vk_instance, this->vk_debug_messenger, nullptr);
 	}
+	this->vk_device.destroy();
 	this->vk_instance.destroy();
 	return true;
 }
@@ -161,26 +162,93 @@ vector<const char*> ProgressiveRenderBackend::vk_get_required_extensions() {
 bool ProgressiveRenderBackend::vk_pick_physical_device() {
 	//find a physical device for vulkan;
 
-	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(this->vk_instance, &deviceCount, nullptr);
+	std::vector<vk::PhysicalDevice> physicalDevices = 
+		this->vk_instance.enumeratePhysicalDevices();
 
-	if (deviceCount == 0) {
+	if (physicalDevices.size() == 0) {
 		throw std::runtime_error("No GPUS with vulkan support.");
 		return false;
 	}
 
-	std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
-	vkEnumeratePhysicalDevices(this->vk_instance, &deviceCount, physicalDevices.data());
+	// Create a map of all suitable devices:
 
-	this->vk_physical_device = physicalDevices[0];
+	for (const auto& physicalDevice : physicalDevices) {
+		if (this->vk_check_physical_device_is_suitable(physicalDevice)) {
+			auto properties = physicalDevice.getProperties();
+			this->vk_physical_device_map.insert(std::make_pair(properties.deviceID, physicalDevice));
+		}
+	}
+
+	if (this->vk_physical_device_map.size() == 0) {
+		throw std::runtime_error("Failed to find a supported GPU.");
+		return false;
+	}
+
+	// Now pick the best one
+
+	// Create priority map of best to worst candidates
+
+	for (auto const& [physicalDeviceID, physicalDevice] : this->vk_physical_device_map) {
+		auto physicalDeviceScore = vk_measure_physical_device_suitability(physicalDevice);
+		this->vk_physical_device_priority_map.insert(std::make_pair(physicalDeviceScore, physicalDeviceID));
+	}
+
+	// Select the best scoring device and get its id
+	this->vk_physical_device_id = this->vk_physical_device_priority_map.rbegin()->second;
 	
 	return true;
+}
+
+bool ProgressiveRenderBackend::vk_check_physical_device_is_suitable(vk::PhysicalDevice physicalDevice) {
+	vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
+	vk::PhysicalDeviceFeatures physicalDeviceFeatures = physicalDevice.getFeatures();
+
+	// This is where we describe the hardware requirements, later we may set these dynamically
+	// based on what features of the engine the game is using such as if the game is using geometry shaders or not.
+	return (physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
+			physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu ||
+			physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eCpu ||
+			physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eVirtualGpu);
+}
+
+uint64_t ProgressiveRenderBackend::vk_measure_physical_device_suitability(vk::PhysicalDevice physicalDevice) {
+	uint64_t score = 0;
+	vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
+	vk::PhysicalDeviceFeatures physicalDeviceFeatures = physicalDevice.getFeatures();
+
+	if (physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+		score += 1000;
+	}
+
+	if (physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+		score += 500;
+	}
+
+	score += physicalDeviceProperties.limits.maxImageDimension1D;
+	score += physicalDeviceProperties.limits.maxImageDimension2D;
+	score += physicalDeviceProperties.limits.maxImageDimension3D;
+	score += physicalDeviceProperties.limits.maxImageDimensionCube;
+	score += physicalDeviceProperties.limits.maxComputeSharedMemorySize;
+	for (auto s : physicalDeviceProperties.limits.maxComputeWorkGroupCount)
+		score += s;
+	for (auto s : physicalDeviceProperties.limits.maxComputeWorkGroupSize)
+		score += s;
+	score += physicalDeviceProperties.limits.maxComputeWorkGroupInvocations;
+	score += physicalDeviceProperties.limits.maxFramebufferLayers;
+	score += physicalDeviceProperties.limits.maxMemoryAllocationCount;
+
+
+	return score;
+}
+
+vk::PhysicalDevice & ProgressiveRenderBackend::vk_get_physical_device() {
+	return this->vk_physical_device_map.at(this->vk_physical_device_id);
 }
 
 bool ProgressiveRenderBackend::vk_create_virtual_device() {
 	//find all queue families from physical device
 	uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
-	auto queueFamilies = vk_physical_device.getQueueFamilyProperties();
+	auto queueFamilies = this->vk_get_physical_device().getQueueFamilyProperties();
 
 	for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
 		if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics) {
@@ -216,7 +284,7 @@ bool ProgressiveRenderBackend::vk_create_virtual_device() {
 		&enabledFeatures
 	);
 
-	this->vk_device = this->vk_physical_device.createDevice(deviceCreateInfo);
+	this->vk_device = this->vk_get_physical_device().createDevice(deviceCreateInfo);
 	this->vk_queue = this->vk_device.getQueue(graphicsQueueFamilyIndex, 0);
 
 	return true;
@@ -257,7 +325,6 @@ vk::DebugUtilsMessengerCreateInfoEXT ProgressiveRenderBackend::vk_create_debug_m
 		vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
 		vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
 		vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-		vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding |
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
 		vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
@@ -287,7 +354,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL ProgressiveRenderBackend::vk_handle_debug_messa
 	void* logger_void_pointer
 ) {
 	std::stringstream validationLayerMessage;
-	validationLayerMessage << "validation layer: " << p_callback_data->pMessage;
+	validationLayerMessage << "VULKAN VALIDATION LAYER: " << p_callback_data->pMessage;
 
 	if (logger_void_pointer != nullptr) {
 		Logger* logger = static_cast<Logger*>(logger_void_pointer);

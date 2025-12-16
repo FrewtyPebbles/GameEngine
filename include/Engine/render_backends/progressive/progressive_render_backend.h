@@ -2,6 +2,9 @@
 
 #include "Engine/render_backends/render_backend.h"
 #include <vulkan/vulkan.hpp>
+#include <map>
+
+using std::map;
 
 const vector<const char*> vkVALIDATION_LAYERS = {
 	"VK_LAYER_KHRONOS_validation"
@@ -85,12 +88,18 @@ private:
 
 	bool vk_pick_physical_device();
 
+	//Checks if physical device has our required vulkan extensions:
+	bool vk_check_physical_device_is_suitable(vk::PhysicalDevice device);
+
+	uint64_t vk_measure_physical_device_suitability(vk::PhysicalDevice physicalDevice);
+
+	vk::PhysicalDevice & vk_get_physical_device();
+
 	//this also creates the queue
 	bool vk_create_virtual_device();
 
-	bool vk_create_device();
-
 	bool vk_cleanup();
+
 
 
 
@@ -123,7 +132,14 @@ private:
 	// required vulkan attributes
 	vk::Instance vk_instance;
 	vk::SurfaceKHR kv_surface;
-	vk::PhysicalDevice vk_physical_device;
+	// add support for multiple different physical devices.
+	// that way later we can support rendering across multiple devices at once or switching devices.
+	// the keys of this map are the physical device ids
+	map<uint32_t, vk::PhysicalDevice> vk_physical_device_map;
+	// key: priority value, value: physical device id
+	std::multimap<uint64_t, uint32_t> vk_physical_device_priority_map;
+
+	size_t vk_physical_device_id;
 	vk::Device vk_device;
 	vk::Queue vk_queue;
 	vk::DebugUtilsMessengerEXT vk_debug_messenger;
