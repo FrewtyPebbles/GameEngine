@@ -29,7 +29,7 @@ public:
 	Logger();
 	/// Default pipes
 
-	log(string message, string pipe, Log::Domain domain, Log::Severity)
+	log(string message, string pipe_name, Log::Domain domain, Log::Severity)
 private:
 	unordered_map<string, LogPipe> pipe_map;
 };

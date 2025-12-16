@@ -1,12 +1,12 @@
 {
   "name": "gameengine",
   "version": "0.1.0",
-  "builtin-baseline": "3af1d1e60af2b2abf55760538cd607829029b07a",
+  "builtin-baseline": "9984495d199a6ce606ef2249a8514c752b37d6f8",
   "dependencies": [
     "draco",
     {
       "name": "sdl2",
-      "features": ["vulkan"]
+      "features": [ "vulkan" ]
     },
     "assimp",
     "glm"
