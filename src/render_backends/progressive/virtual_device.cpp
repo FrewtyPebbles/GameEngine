@@ -78,6 +78,10 @@ void VirtualDevice::vk_create_logical_device() {
 	if (this->vk_physical_device.createDevice(&createInfo, nullptr, &this->vk_device) != vk::Result::eSuccess) {
 		throw std::runtime_error("Failed to create logical device!");
 	}
+
+	// Now get the queue handles
+
+	this->vk_device.getQueue(this->queue_family_indices.graphics_family.value(), 0, &this->queues.graphics);
 }
 
 

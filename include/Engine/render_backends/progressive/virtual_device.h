@@ -14,6 +14,10 @@ struct QueueFamilyIndices {
 	bool is_complete() const;
 };
 
+struct DeviceQueues {
+	vk::Queue graphics;
+};
+
 class VirtualDevice {
 public:
 	VirtualDevice(vk::PhysicalDevice vk_physical_device);
@@ -26,6 +30,7 @@ public:
 	static bool check_physical_device_is_suitable(vk::PhysicalDevice physical_device);
 
 	QueueFamilyIndices queue_family_indices;
+	DeviceQueues queues;
 
 private:
 
