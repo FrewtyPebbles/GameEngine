@@ -1,7 +1,9 @@
 #pragma once
 #include "Engine/render_backends/progressive/constants.h"
+#include "Engine/render_backends/progressive/swap_chain.h"
 #include <vulkan/vulkan.hpp>
 #include <optional>
+#include <memory>
 
 struct QueueFamilyIndices {
 
@@ -48,4 +50,5 @@ private:
 	vk::PhysicalDevice vk_physical_device;
 	uint64_t suitability;
 	vk::SurfaceKHR* vk_surface;
+	std::unique_ptr<SwapChain> swap_chain;
 };

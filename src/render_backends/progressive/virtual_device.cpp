@@ -45,6 +45,9 @@ VirtualDevice::VirtualDevice(vk::PhysicalDevice vk_physical_device, vk::SurfaceK
 
 	// create the vk::Device
 	this->vk_create_logical_device();
+
+	// create the swap chain
+	this->swap_chain = std::make_unique<SwapChain>(&this->vk_physical_device, this->vk_surface);
 }
 
 void VirtualDevice::clean_up() {
@@ -159,13 +162,20 @@ bool VirtualDevice::check_physical_device_is_suitable(vk::PhysicalDevice vk_phys
 
 	bool extensionsSupported = VirtualDevice::check_device_extension_support(vk_physical_device);
 
+	bool swapChainAdequate = false;
+	if (extensionsSupported) {
+		SwapChainSupportDetails swapChainSupportDetails = SwapChainSupportDetails(vk_physical_device, vk_surface);
+		swapChainAdequate = !swapChainSupportDetails.vk_surface_formats.empty() &&
+			!swapChainSupportDetails.vk_present_modes.empty();
+	}
+
 	// This is where we describe the hardware requirements, later we may set these dynamically
 	// based on what features of the engine the game is using such as if the game is using geometry shaders or not.
 	return (physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
 		physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu ||
 		physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eCpu ||
 		physicalDeviceProperties.deviceType == vk::PhysicalDeviceType::eVirtualGpu)
-		&& (queue_family_indices.has_required()) && extensionsSupported;
+		&& (queue_family_indices.has_required()) && extensionsSupported && swapChainAdequate;
 }
 
 uint64_t VirtualDevice::get_suitability() const {
