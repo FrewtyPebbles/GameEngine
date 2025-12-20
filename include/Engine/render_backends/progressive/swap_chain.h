@@ -27,7 +27,6 @@ private:
 	vk::SurfaceKHR* vk_surface;
 
 	vk::SurfaceFormatKHR vk_surface_format;
-	vk::SurfaceFormatKHR vk_surface_format;
 
 	SwapChainSupportDetails support_details;
 };
