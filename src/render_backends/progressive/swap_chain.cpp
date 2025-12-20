@@ -8,7 +8,9 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& vk_ph
 }
 
 SwapChain::SwapChain(vk::PhysicalDevice* vk_physical_device, vk::SurfaceKHR* vk_surface)
-: vk_physical_device(vk_physical_device), vk_surface(vk_surface), support_details(*vk_physical_device, *vk_surface) {}
+: vk_physical_device(vk_physical_device), vk_surface(vk_surface), support_details(*vk_physical_device, *vk_surface) {
+	choose_surface_format();
+}
 
 void SwapChain::choose_surface_format() {
 	for (const auto& availableFormat : this->support_details.vk_surface_formats) {
@@ -19,7 +21,7 @@ void SwapChain::choose_surface_format() {
 		}
 	}
 
-	// maybe TODO: rank and pick surface formats based on how "good" they are
+	// TODO: rank and pick surface formats based on how "good" they are
 	// but for now we will just pick the first one that pops up:
 	this->vk_surface_format = this->support_details.vk_surface_formats[0];
 }
