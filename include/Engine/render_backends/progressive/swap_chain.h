@@ -13,7 +13,10 @@ struct SwapChainSupportDetails {
 
 class SwapChain {
 public:
-	SwapChain(vk::PhysicalDevice* vk_physical_device, vk::SurfaceKHR* vk_surface);
+	SwapChain(vk::PhysicalDevice* vk_physical_device, vk::SurfaceKHR* vk_surface,
+		// This should be optionally user supplied:
+		vk::PresentModeKHR prefered_present_mode = vk::PresentModeKHR::eMailbox
+	);
 
 private:
 
@@ -21,12 +24,17 @@ private:
 
 	void choose_surface_format();
 
+	void choose_present_mode(vk::PresentModeKHR prefered = vk::PresentModeKHR::eMailbox);
+
+	void choose_swap_extent();
+
 	// ATTRIBUTES
 
 	vk::PhysicalDevice* vk_physical_device;
 	vk::SurfaceKHR* vk_surface;
 
 	vk::SurfaceFormatKHR vk_surface_format;
+	vk::PresentModeKHR vk_present_mode;
 
 	SwapChainSupportDetails support_details;
 };
