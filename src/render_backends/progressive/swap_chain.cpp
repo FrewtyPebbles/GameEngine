@@ -24,7 +24,7 @@ SwapChain::SwapChain(SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_dev
 
 	vk::SurfaceFormatKHR vkSurfaceFormat = choose_surface_format(support_details);
 	vk::PresentModeKHR vkPresentMode = choose_present_mode(support_details, setting_prefered_present_mode);
-	vk::Extent2D vkExtent = choose_swap_extent(support_details);
+	this->vk_extent = choose_swap_extent(support_details);
 	
 	// get the image count
 	uint32_t imageCount = support_details.vk_surface_capabilities.minImageCount + 1;
@@ -45,14 +45,16 @@ SwapChain::SwapChain(SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_dev
 		queueFamilyIndicesStruct.present.value()
 	};
 
-	if (queueFamilyIndicesStruct.graphics != queueFamilyIndicesStruct.present) {
+	// different settings for graphics and present being the same queue vs different:
+
+	if (queueFamilyIndicesStruct.graphics != queueFamilyIndicesStruct.present) { // queues are different
 		createInfo = vk::SwapchainCreateInfoKHR(
 			{},
 			*this->vk_surface,
 			imageCount,
 			vkSurfaceFormat.format,
 			vkSurfaceFormat.colorSpace,
-			vkExtent,
+			this->vk_extent,
 			setting_stereoscopic ? 2 : 1,
 			image_usage_bits,
 			vk::SharingMode::eConcurrent,
@@ -66,14 +68,14 @@ SwapChain::SwapChain(SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_dev
 			// the swapchain and the swapchain needs to be recreated.
 		);
 	}
-	else {
+	else { // Queues are the same
 		createInfo = vk::SwapchainCreateInfoKHR(
 			{},
 			*this->vk_surface,
 			imageCount,
 			vkSurfaceFormat.format,
 			vkSurfaceFormat.colorSpace,
-			vkExtent,
+			this->vk_extent,
 			setting_stereoscopic ? 2 : 1,
 			image_usage_bits,
 			vk::SharingMode::eExclusive,
@@ -88,7 +90,13 @@ SwapChain::SwapChain(SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_dev
 		);
 	}
 
+	// create the actual swap chain internally in vulkan:
 	this->vk_swapchain = this->vk_device->createSwapchainKHR(createInfo);
+
+	// Getting the handles to the images in the swap chain:
+	this->vk_images = this->vk_device->getSwapchainImagesKHR(this->vk_swapchain);
+
+	this->vk_image_format = vkSurfaceFormat.format;
 }
 
 vk::SurfaceFormatKHR SwapChain::choose_surface_format(const SwapChainSupportDetails& support_details) {

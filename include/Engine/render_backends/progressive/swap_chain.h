@@ -42,4 +42,8 @@ private:
 	vk::SurfaceKHR* vk_surface;
 
 	vk::SwapchainKHR vk_swapchain;
+
+	vector<vk::Image> vk_images;
+	vk::Format vk_image_format;
+	vk::Extent2D vk_extent;
 };
