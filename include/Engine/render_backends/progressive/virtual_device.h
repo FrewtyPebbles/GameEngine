@@ -2,6 +2,7 @@
 #include "Engine/render_backends/progressive/constants.h"
 #include "Engine/render_backends/progressive/swap_chain.h"
 #include "Engine/state/application_config.h"
+#include "Engine/logging/logger.h"
 #include <vulkan/vulkan.hpp>
 #include <optional>
 #include <memory>
@@ -25,7 +26,7 @@ struct DeviceQueues {
 
 class VirtualDevice {
 public:
-	VirtualDevice(ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
+	VirtualDevice(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
 		// Make this setting something setable by the user:
 		vk::PresentModeKHR prefered_present_mode = vk::PresentModeKHR::eMailbox
 	);
@@ -33,12 +34,17 @@ public:
 	void clean_up();
 
 	vk::Device* get_vulkan_device();
+
 	uint64_t get_suitability() const;
 	
 	static bool check_physical_device_is_suitable(vk::PhysicalDevice vk_physical_device, const vk::SurfaceKHR& vk_surface);
 
 	
 	DeviceQueues queues;
+
+	vk::PhysicalDeviceFeatures vk_device_features;
+
+	vk::PhysicalDeviceProperties vk_device_properties;
 
 private:
 
@@ -60,4 +66,5 @@ private:
 	std::unique_ptr<SwapChain> swapchain;
 
 	ApplicationConfig* application_config;
+	Logger* logger;
 };

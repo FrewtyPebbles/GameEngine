@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/state/application_config.h"
+#include "Engine/logging/logger.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <SDL2/SDL.h>
@@ -19,7 +20,7 @@ struct SwapChainSupportDetails {
 
 class SwapChain {
 public:
-	SwapChain(ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, vk::Device* vk_device, vk::SurfaceKHR* vk_surface,
+	SwapChain(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, vk::Device* vk_device, vk::SurfaceKHR* vk_surface,
 		vk::ImageUsageFlags image_usage_bits,
 		// This should be optionally user supplied:
 		vk::PresentModeKHR setting_prefered_present_mode = vk::PresentModeKHR::eMailbox,
@@ -64,4 +65,5 @@ private:
 	vk::Extent2D vk_extent;
 	
 	ApplicationConfig* application_config;
+	Logger* logger;
 };

@@ -195,7 +195,7 @@ bool ProgressiveRenderBackend::vk_create_virtual_devices() {
 	}
 
 	for (auto const& [physicalDeviceID, physicalDevice] : this->vk_physical_device_map) {
-		auto virtualDevice = std::make_shared<VirtualDevice>(this->application_config, this->sdl_window, physicalDevice, &this->vk_surface);
+		auto virtualDevice = std::make_shared<VirtualDevice>(this->logger, this->application_config, this->sdl_window, physicalDevice, &this->vk_surface);
 		this->virtual_devices.push_back(virtualDevice);
 		this->virtual_device_priority_map.insert(std::make_pair(virtualDevice->get_suitability(), virtualDevice));
 	}
@@ -206,12 +206,11 @@ bool ProgressiveRenderBackend::vk_create_virtual_devices() {
 bool ProgressiveRenderBackend::vk_create_graphics_pipelines() {
 	// TODO: Create a different graphics pipeline for each scenario
 	
-	
 	// Build the render pipeline:
 	// this renders graphics onto the screen.
 	this->graphics_pipeline_map.insert(std::make_pair(
 		"render",
-		GraphicsPipeline::Builder(this->virtual_device->get_vulkan_device())
+		GraphicsPipeline::Builder("render", this->logger, this->virtual_device)
 		.add_stage(
 			"shaders/.testing/vert.spv", // for now we are just using .testing since it is gitignored
 			"main",
@@ -236,6 +235,7 @@ bool ProgressiveRenderBackend::vk_create_graphics_pipelines() {
 		->set_primitive_restart(false)
 		->set_viewport_count(1)
 		->set_scissor_count(1)
+		->set_multisampling(false, vk::SampleCountFlagBits::e64)
 		->build()
 	));
 

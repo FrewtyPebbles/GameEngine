@@ -13,13 +13,13 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& vk_ph
 	vk_present_modes = vk_physical_device.getSurfacePresentModesKHR(vk_surface);
 }
 
-SwapChain::SwapChain(ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, vk::Device* vk_device, vk::SurfaceKHR* vk_surface,
+SwapChain::SwapChain(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, vk::Device* vk_device, vk::SurfaceKHR* vk_surface,
 	vk::ImageUsageFlags image_usage_bits,
 	// Settings:
 	vk::PresentModeKHR setting_prefered_present_mode,
 	bool setting_stereoscopic
 )
-: sdl_window(sdl_window), vk_physical_device(vk_physical_device), vk_device(vk_device), vk_surface(vk_surface), application_config(application_config) {
+: sdl_window(sdl_window), vk_physical_device(vk_physical_device), vk_device(vk_device), vk_surface(vk_surface), application_config(application_config), logger(logger) {
 	SwapChainSupportDetails support_details = SwapChainSupportDetails(*vk_physical_device, *vk_surface);
 
 	vk::SurfaceFormatKHR vkSurfaceFormat = choose_surface_format(support_details);

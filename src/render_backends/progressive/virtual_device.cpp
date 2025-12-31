@@ -37,9 +37,9 @@ bool QueueFamilyIndices::is_complete() const {
 }
 
 
-VirtualDevice::VirtualDevice(ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
+VirtualDevice::VirtualDevice(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
 	vk::PresentModeKHR prefered_present_mode)
-: sdl_window(sdl_window), vk_physical_device(vk_physical_device), suitability(0), vk_surface(vk_surface), application_config(application_config) {
+: sdl_window(sdl_window), vk_physical_device(vk_physical_device), suitability(0), vk_surface(vk_surface), application_config(application_config), logger(logger) {
 	suitability = this->vk_measure_physical_device_suitability();
 
 	// This populates the queue family indices
@@ -49,7 +49,7 @@ VirtualDevice::VirtualDevice(ApplicationConfig* application_config, SDL_Window* 
 	this->vk_create_logical_device(queueFamilyIndices);
 
 	// create the swapchain
-	this->swapchain = std::make_unique<SwapChain>(this->application_config, this->sdl_window, &this->vk_physical_device, &this->vk_device, this->vk_surface, vk::ImageUsageFlagBits::eColorAttachment, prefered_present_mode);
+	this->swapchain = std::make_unique<SwapChain>(this->logger, this->application_config, this->sdl_window, &this->vk_physical_device, &this->vk_device, this->vk_surface, vk::ImageUsageFlagBits::eColorAttachment, prefered_present_mode);
 
 }
 
@@ -78,14 +78,18 @@ void VirtualDevice::vk_create_logical_device(QueueFamilyIndices queue_family_ind
 		);
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
-	vk::PhysicalDeviceFeatures deviceFeatures = this->vk_get_device_features(queue_family_indices);
+	
+	// save features for later config settings
+	this->vk_device_features = this->vk_get_device_features(queue_family_indices);
+
+	this->vk_device_properties = this->vk_physical_device.getProperties();
 
 	vk::DeviceCreateInfo createInfo = vk::DeviceCreateInfo(
 		{},
 		queueCreateInfos,
 		{},
 		vkDEVICE_EXTENSIONS,
-		&deviceFeatures
+		&vk_device_features
 	);
 
 	// legacy vulkan support
