@@ -118,6 +118,8 @@ vk::PhysicalDeviceFeatures VirtualDevice::vk_get_device_features(QueueFamilyIndi
 	vk::PhysicalDeviceFeatures supportedFeatures = this->vk_physical_device.getFeatures();
 	vk::PhysicalDeviceFeatures usedFeatures = vk::PhysicalDeviceFeatures();
 
+	// TODO: Set requirements based on settings specified in ApplicationConfig
+	// these settings should also affect how the graphics pipeline is set up.
 	// set the nessicary features if available
 	usedFeatures.multiViewport = supportedFeatures.multiViewport;
 	

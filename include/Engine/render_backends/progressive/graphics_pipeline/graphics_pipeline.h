@@ -76,7 +76,6 @@ public:
 
 	// multisampling
 
-	// TODO : add querying device support for multisampling
 	GraphicsPipelineBuilder* set_multisampling(
 		bool vk_sample_shading_enable = false,
 		vk::SampleCountFlagBits vk_rasterization_samples = vk::SampleCountFlagBits::e1,
@@ -84,6 +83,33 @@ public:
 		vk::SampleMask* vk_p_sample_mask = nullptr,
 		bool vk_alpha_to_coverage_enable = false,
 		bool vk_alpha_to_one_enable = false
+	);
+
+	// color blending
+
+	// default is alpha blending
+	GraphicsPipelineBuilder* add_color_blend_attachment(
+		vk::ColorComponentFlags vk_color_write_mask = 
+			vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+		bool vk_blend_enable = true,
+		vk::BlendFactor vk_src_color_blend_factor = vk::BlendFactor::eSrcAlpha,
+		vk::BlendFactor vk_dst_color_blend_factor = vk::BlendFactor::eOneMinusSrcAlpha,
+		vk::BlendOp vk_color_blend_op = vk::BlendOp::eAdd,
+		vk::BlendFactor vk_src_alpha_blend_factor = vk::BlendFactor::eOne,
+		vk::BlendFactor vk_dst_alpha_blend_factor = vk::BlendFactor::eZero,
+		vk::BlendOp vk_alpha_blend_op = vk::BlendOp::eAdd
+	);
+
+	GraphicsPipelineBuilder* set_color_blend_logical_op(
+		bool enabled = false,
+		vk::LogicOp op = vk::LogicOp::eCopy
+	);
+
+	GraphicsPipelineBuilder* set_color_blend_constants(
+		float r = 0.0f,
+		float g = 0.0f,
+		float b = 0.0f,
+		float a = 0.0f
 	);
 
 	// this builds out the final pipeline
@@ -175,6 +201,17 @@ private:
 	// stencil test
 
 	bool vk_stencil_test_enabled = true;
+
+	// Color Blending
+
+	vector<vk::PipelineColorBlendAttachmentState> vk_color_blend_attachments;
+
+	bool vk_color_blend_logical_op_enable = false;
+
+	vk::LogicOp vk_color_blend_logical_op = vk::LogicOp::eCopy;
+
+	float vk_color_blend_constants[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
 };
 
 

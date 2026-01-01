@@ -68,6 +68,18 @@ std::shared_ptr<GraphicsPipeline> GraphicsPipelineBuilder::build() {
 		this->vk_alpha_to_one_enable
 	);
 
+	// create color blend state
+
+	vk::PipelineColorBlendStateCreateInfo colorBlendCreateInfo;
+		colorBlendCreateInfo.logicOpEnable = this->vk_color_blend_logical_op_enable;
+		colorBlendCreateInfo.logicOp = this->vk_color_blend_logical_op;
+		colorBlendCreateInfo.attachmentCount = this->vk_color_blend_attachments.size();
+		colorBlendCreateInfo.pAttachments = this->vk_color_blend_attachments.data();
+		colorBlendCreateInfo.blendConstants[0] = this->vk_color_blend_constants[0];
+		colorBlendCreateInfo.blendConstants[1] = this->vk_color_blend_constants[1];
+		colorBlendCreateInfo.blendConstants[2] = this->vk_color_blend_constants[2];
+		colorBlendCreateInfo.blendConstants[3] = this->vk_color_blend_constants[3];
+
 	return std::make_shared<GraphicsPipeline>();
 }
 
@@ -381,6 +393,51 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_multisampling(
 
 	this->vk_alpha_to_one_enable = vk_alpha_to_one_enable;
 
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::add_color_blend_attachment(
+	vk::ColorComponentFlags vk_color_write_mask,
+	bool vk_blend_enable,
+	vk::BlendFactor vk_src_color_blend_factor,
+	vk::BlendFactor vk_dst_color_blend_factor,
+	vk::BlendOp vk_color_blend_op,
+	vk::BlendFactor vk_src_alpha_blend_factor,
+	vk::BlendFactor vk_dst_alpha_blend_factor,
+	vk::BlendOp vk_alpha_blend_op
+) {
+	this->vk_color_blend_attachments.push_back(vk::PipelineColorBlendAttachmentState(
+		vk_blend_enable,
+		vk_src_color_blend_factor,
+		vk_dst_color_blend_factor,
+		vk_color_blend_op,
+		vk_src_alpha_blend_factor,
+		vk_dst_alpha_blend_factor,
+		vk_alpha_blend_op,
+		vk_color_write_mask
+	));
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_color_blend_logical_op(
+	bool enabled,
+	vk::LogicOp op
+) {
+	this->vk_color_blend_logical_op_enable = enabled;
+	this->vk_color_blend_logical_op = op;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_color_blend_constants(
+	float r,
+	float g,
+	float b,
+	float a
+) {
+	this->vk_color_blend_constants[0] = r;
+	this->vk_color_blend_constants[1] = g;
+	this->vk_color_blend_constants[2] = b;
+	this->vk_color_blend_constants[3] = a;
 	return this;
 }
 
