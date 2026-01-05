@@ -39,14 +39,17 @@ public:
 	
 	static bool check_physical_device_is_suitable(vk::PhysicalDevice vk_physical_device, const vk::SurfaceKHR& vk_surface);
 
+	// GPU SUPPORT QUERIES
+
+	vk::SampleCountFlagBits get_multisampling_samples_fallback(vk::SampleCountFlagBits samples, bool using_depth_testing, bool using_stencil_testing);
+
+	// public attributes
 	
 	DeviceQueues queues;
 
 	std::unique_ptr<SwapChain> swapchain;
 
 	vk::PhysicalDeviceFeatures vk_device_features;
-
-	vk::PhysicalDeviceDynamicRenderingFeaturesKHR vk_device_dynamic_rendering_features;
 
 	vk::PhysicalDeviceProperties vk_device_properties;
 

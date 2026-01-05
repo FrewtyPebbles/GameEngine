@@ -89,8 +89,7 @@ void VirtualDevice::vk_create_logical_device(QueueFamilyIndices queue_family_ind
 		queueCreateInfos,
 		{},
 		vkDEVICE_EXTENSIONS,
-		&vk_device_features,
-		&vk_device_dynamic_rendering_features
+		&this->vk_device_features
 	);
 
 	// legacy vulkan support
@@ -118,17 +117,14 @@ void VirtualDevice::vk_create_logical_device(QueueFamilyIndices queue_family_ind
 void VirtualDevice::vk_get_device_features(QueueFamilyIndices queue_family_indices) {
 	vk::PhysicalDeviceFeatures supportedFeatures = this->vk_physical_device.getFeatures();
 	vk::PhysicalDeviceFeatures usedFeatures = vk::PhysicalDeviceFeatures();
-	vk::PhysicalDeviceDynamicRenderingFeaturesKHR usedDynamicRenderingFeatures = vk::PhysicalDeviceDynamicRenderingFeaturesKHR();
 
 
 	// TODO: Set requirements based on settings specified in ApplicationConfig
 	// these settings should also affect how the graphics pipeline is set up.
 	// set the nessicary features if available
 	usedFeatures.multiViewport = supportedFeatures.multiViewport;
-	usedDynamicRenderingFeatures.dynamicRendering = vk::True;
-	
+
 	this->vk_device_features = usedFeatures;
-	this->vk_device_dynamic_rendering_features = usedDynamicRenderingFeatures;
 }
 
 bool VirtualDevice::check_device_extension_support(vk::PhysicalDevice vk_physical_device) {
@@ -203,4 +199,53 @@ bool VirtualDevice::check_physical_device_is_suitable(vk::PhysicalDevice vk_phys
 
 uint64_t VirtualDevice::get_suitability() const {
 	return suitability;
+}
+
+// GPU SUPPORT QUERIES
+
+vk::SampleCountFlagBits VirtualDevice::get_multisampling_samples_fallback(vk::SampleCountFlagBits samples, bool using_depth_testing, bool using_stencil_testing) {
+	vk::SampleCountFlags supportedSampleCounts =
+		this->vk_device_properties.limits.framebufferColorSampleCounts;
+
+	if (using_depth_testing)
+		supportedSampleCounts &=
+		this->vk_device_properties.limits.framebufferDepthSampleCounts;
+
+	if (using_stencil_testing)
+		supportedSampleCounts &=
+		this->vk_device_properties.limits.framebufferStencilSampleCounts;
+
+	if (supportedSampleCounts & samples) {
+		return samples;
+	}
+	else {
+		vk::SampleCountFlagBits fallbackSampleCount = vk::SampleCountFlagBits::e1;
+		if (supportedSampleCounts & vk::SampleCountFlagBits::e64 && samples > vk::SampleCountFlagBits::e64)
+			fallbackSampleCount = vk::SampleCountFlagBits::e64;
+		else if (supportedSampleCounts & vk::SampleCountFlagBits::e32 && samples > vk::SampleCountFlagBits::e32)
+			fallbackSampleCount = vk::SampleCountFlagBits::e32;
+		else if (supportedSampleCounts & vk::SampleCountFlagBits::e16 && samples > vk::SampleCountFlagBits::e16)
+			fallbackSampleCount = vk::SampleCountFlagBits::e16;
+		else if (supportedSampleCounts & vk::SampleCountFlagBits::e8 && samples > vk::SampleCountFlagBits::e8)
+			fallbackSampleCount = vk::SampleCountFlagBits::e8;
+		else if (supportedSampleCounts & vk::SampleCountFlagBits::e4 && samples > vk::SampleCountFlagBits::e4)
+			fallbackSampleCount = vk::SampleCountFlagBits::e4;
+		else if (supportedSampleCounts & vk::SampleCountFlagBits::e2 && samples > vk::SampleCountFlagBits::e2)
+			fallbackSampleCount = vk::SampleCountFlagBits::e2;
+
+		this->logger->log(
+			"The enabled GPU \""
+			+ string(static_cast<const char*>(this->vk_device_properties.deviceName))
+			+ "\" does not support "
+			+ std::to_string(static_cast<uint32_t>(samples))
+			+ "xMSAA. Falling back to "
+			+ std::to_string(static_cast<uint32_t>(fallbackSampleCount))
+			+ "xMSAA.",
+			"rendering",
+			Log::Domain::RENDERING,
+			Log::Severity::WARNING
+		);
+
+		return fallbackSampleCount;
+	}
 }

@@ -2,6 +2,7 @@
 #include "Engine/render_backends/progressive/constants.h"
 #include "Engine/render_backends/progressive/virtual_device.h"
 #include "Engine/render_backends/progressive/graphics_pipeline.h"
+#include "Engine/render_backends/progressive/render_pass.h"
 #include <SDL2/SDL_vulkan.h>
 #include <cstdint>
 #include <limits>
@@ -204,6 +205,10 @@ void SwapChain::clean_up() {
 		graphicsPipeline->clean_up();
 	}
 
+	for (const auto& [renderPassName, renderPass] : this->render_pass_map) {
+		renderPass->clean_up();
+	}
+
 	for (auto& imageView : this->vk_display_image_views) {
 		this->device->get_vulkan_device()->destroyImageView(imageView);
 	}
@@ -220,6 +225,35 @@ bool SwapChain::create_graphics_pipelines() {
 
 	// Build the render pipeline:
 	// this renders graphics onto the screen.
+
+	/// Create Render Pass:
+
+	/// Create Sub Pass:
+
+	auto subpass1 = RenderPass::Builder::SubpassBuilder("render", this->logger, this->device);
+	subpass1.add_color_attachment_reference(
+		0,
+		vk::ImageLayout::eColorAttachmentOptimal
+	)
+	->set_bind_point(vk::PipelineBindPoint::eGraphics);
+
+	this->render_pass_map.insert(std::make_pair(
+		"render",
+		RenderPass::Builder("render", this->logger, this->device)
+		.add_attachment_description(
+			{},
+			this->vk_image_format,
+			vk::SampleCountFlagBits::e1, // TODO : Change this based on user defined multisampling settings.
+			vk::AttachmentLoadOp::eClear,
+			vk::AttachmentStoreOp::eStore, // Store the image to be shown on the screen
+			vk::AttachmentLoadOp::eDontCare, // nostencil
+			vk::AttachmentStoreOp::eDontCare, // no stencil
+			vk::ImageLayout::eUndefined, // input layout doesnt matter since we are clearing the image anyways
+			vk::ImageLayout::ePresentSrcKHR
+		)
+		->add_sub_pass_builder(subpass1)
+		->build()
+	));
 
 	/// Create Graphics Pipeline:
 
@@ -250,9 +284,9 @@ bool SwapChain::create_graphics_pipelines() {
 		->set_primitive_restart(false)
 		->set_viewport_count(1)
 		->set_scissor_count(1)
-		->set_multisampling(false, vk::SampleCountFlagBits::e64)
+		->set_multisampling(false, vk::SampleCountFlagBits::e1)
 		->add_color_blend_attachment()
-		->add_color_attachment_format(this->vk_image_format)
+		->set_subpass(this->render_pass_map["render"], 0)// subpass 0
 		->build()
 	));
 

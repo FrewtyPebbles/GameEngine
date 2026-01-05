@@ -13,6 +13,7 @@ using std::string;
 
 class VirtualDevice;
 class GraphicsPipeline;
+class RenderPass;
 
 struct SwapChainSupportDetails {
 	SwapChainSupportDetails(const vk::PhysicalDevice& vk_physical_device, const vk::SurfaceKHR& vk_surface);
@@ -77,4 +78,5 @@ private:
 	// GRAPHICS PIPELINE
 
 	unordered_map<string, std::shared_ptr<GraphicsPipeline>> graphics_pipeline_map;
+	unordered_map<string, std::shared_ptr<RenderPass>> render_pass_map;
 };

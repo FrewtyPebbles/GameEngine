@@ -71,6 +71,28 @@ std::shared_ptr<GraphicsPipeline> GraphicsPipelineBuilder::build() {
 		this->vk_alpha_to_one_enable
 	);
 
+	// depth stencil state
+
+	vk::PipelineDepthStencilStateCreateInfo depthStencilState = vk::PipelineDepthStencilStateCreateInfo(
+		{},
+		this->vk_depth_test_enable,
+		this->vk_depth_write_enable,
+		this->vk_depth_compare_op,
+		this->vk_depth_bounds_test_enable,
+		this->vk_stencil_test_enable,
+		this->vk_stencil_op_state_front,
+		this->vk_stencil_op_state_back,
+		this->vk_stencil_min_depth_bounds,
+		this->vk_stencil_max_depth_bounds
+	);
+
+	// tessellation state
+
+	vk::PipelineTessellationStateCreateInfo tessellationState = vk::PipelineTessellationStateCreateInfo(
+		{},
+		this->vk_tessellation_vertices_per_patch
+	);
+
 	// create color blend state
 
 	vk::PipelineColorBlendStateCreateInfo colorBlendCreateInfo;
@@ -100,32 +122,22 @@ std::shared_ptr<GraphicsPipeline> GraphicsPipelineBuilder::build() {
 		this->shader_stages,
 		& vertexInputCreateInfo,
 		& inputAssemblyCreateInfo,
-		nullptr, // TODO: add tessellation state
+		& tessellationState,
 		& viewPortStateCreateInfo,
 		& rasterizationCreateInfo,
 		& multisamplingCreateInfo,
-		nullptr, // TODO: add depth stencil state
+		& depthStencilState,
 		& colorBlendCreateInfo,
 		& dynamicStateCreateInfo,
 		pipelineLayout,
-		VK_NULL_HANDLE, // using dynamic rendering
-		0, // subpasses
+		this->render_pass->vk_get_render_pass(), // using dynamic rendering
+		this->vk_subpass_index, // subpasses
 		this->base_graphics_pipeline != nullptr ? this->base_graphics_pipeline->vk_get_pipeline() : nullptr
 	);
 
-	// create pipeline rendering info for dynamic rendering
+	
 
-	vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo(
-		{},
-		static_cast<uint32_t>(this->color_attachment_formats.size()),
-		this->color_attachment_formats.data(),
-		this->depth_attachment_format,
-		this->stencil_attachment_format
-	);
-
-	graphicsPipelineCreateInfo.pNext = &pipelineRenderingCreateInfo;
-
-	auto [result, pipeline] = this->device->get_vulkan_device()->createGraphicsPipeline({}, graphicsPipelineCreateInfo);
+	auto [result, vk_pipeline] = this->device->get_vulkan_device()->createGraphicsPipeline({}, graphicsPipelineCreateInfo);
 
 	if (result != vk::Result::eSuccess) {
 		this->logger->log(
@@ -140,7 +152,11 @@ std::shared_ptr<GraphicsPipeline> GraphicsPipelineBuilder::build() {
 
 	this->clean_up();
 
-	return std::make_shared<GraphicsPipeline>(this->logger, this->device, pipeline, pipelineLayout);
+	auto graphics_pipeline = std::make_shared<GraphicsPipeline>(this->logger, this->device, vk_pipeline, pipelineLayout);
+
+	this->render_pass->graphics_pipeline_subpasses.insert(std::make_pair(this->vk_subpass_index, graphics_pipeline));
+	
+	return graphics_pipeline;
 }
 
 void GraphicsPipelineBuilder::clean_up() {
@@ -390,50 +406,7 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_multisampling(
 	// RASTERIZATION SAMPLES
 
 	// get supported sample rate:
-
-	vk::SampleCountFlags supportedSampleCounts =
-		this->device->vk_device_properties.limits.framebufferColorSampleCounts;
-
-	if (this->vk_depth_test_enabled)
-		supportedSampleCounts &=
-		this->device->vk_device_properties.limits.framebufferDepthSampleCounts;
-
-	if (this->vk_stencil_test_enabled)
-		supportedSampleCounts &=
-		this->device->vk_device_properties.limits.framebufferStencilSampleCounts;
-
-	if (supportedSampleCounts & vk_rasterization_samples) {
-		this->vk_multisampling_rasterization_samples = vk_rasterization_samples;
-	} else {
-		vk::SampleCountFlagBits fallbackSampleCount = vk::SampleCountFlagBits::e1;
-		if (supportedSampleCounts & vk::SampleCountFlagBits::e64 && vk_rasterization_samples > vk::SampleCountFlagBits::e64)
-			fallbackSampleCount = vk::SampleCountFlagBits::e64;
-		else if (supportedSampleCounts & vk::SampleCountFlagBits::e32 && vk_rasterization_samples > vk::SampleCountFlagBits::e32)
-			fallbackSampleCount = vk::SampleCountFlagBits::e32;
-		else if (supportedSampleCounts & vk::SampleCountFlagBits::e16 && vk_rasterization_samples > vk::SampleCountFlagBits::e16)
-			fallbackSampleCount = vk::SampleCountFlagBits::e16;
-		else if (supportedSampleCounts & vk::SampleCountFlagBits::e8 && vk_rasterization_samples > vk::SampleCountFlagBits::e8)
-			fallbackSampleCount = vk::SampleCountFlagBits::e8;
-		else if (supportedSampleCounts & vk::SampleCountFlagBits::e4 && vk_rasterization_samples > vk::SampleCountFlagBits::e4)
-			fallbackSampleCount = vk::SampleCountFlagBits::e4;
-		else if (supportedSampleCounts & vk::SampleCountFlagBits::e2 && vk_rasterization_samples > vk::SampleCountFlagBits::e2)
-			fallbackSampleCount = vk::SampleCountFlagBits::e2;
-
-		this->logger->log(
-			"The enabled GPU \""
-			+ string(static_cast<const char*>(this->device->vk_device_properties.deviceName))
-			+ "\" does not support "
-			+ std::to_string(static_cast<uint32_t>(vk_rasterization_samples))
-			+ "xMSAA. Falling back to "
-			+ std::to_string(static_cast<uint32_t>(fallbackSampleCount))
-			+ "xMSAA.",
-			"rendering",
-			Log::Domain::RENDERING,
-			Log::Severity::WARNING
-		);
-
-		this->vk_multisampling_rasterization_samples = fallbackSampleCount;
-	}
+	this->vk_multisampling_rasterization_samples = this->device->get_multisampling_samples_fallback(vk_rasterization_samples, this->vk_depth_test_enable, this->vk_stencil_test_enable);
 
 	// MIN SAMPLE SHADING
 	if (this->vk_sample_shading_enable) {
@@ -465,6 +438,65 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_multisampling(
 
 	return this;
 }
+
+
+// depth testing
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_depth_test_enable(bool value) {
+	this->vk_depth_test_enable = value;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_depth_write_enable(bool value) {
+	this->vk_depth_write_enable = value;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_depth_compare_op(vk::CompareOp value) {
+	this->vk_depth_compare_op = value;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_depth_bounds_test_enable(bool value) {
+	this->vk_depth_bounds_test_enable = value;
+	return this;
+}
+
+// stencil testing
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_stencil_test_enable(bool value) {
+	this->vk_stencil_test_enable = value;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_stencil_op_state_front(vk::StencilOpState value) {
+	this->vk_stencil_op_state_front = value;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_stencil_op_state_back(vk::StencilOpState value) {
+	this->vk_stencil_op_state_back = value;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_stencil_min_depth_bounds(float value) {
+	this->vk_stencil_min_depth_bounds = value;
+	return this;
+}
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_stencil_max_depth_bounds(float value) {
+	this->vk_stencil_max_depth_bounds = value;
+	return this;
+}
+
+// tessellation
+
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_tessellation_vertices_per_patch(uint32_t count) {
+	this->vk_tessellation_vertices_per_patch = count;
+	return this;
+}
+
+// Color blending
 
 GraphicsPipelineBuilder* GraphicsPipelineBuilder::add_color_blend_attachment(
 	vk::ColorComponentFlags vk_color_write_mask,
@@ -516,18 +548,9 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_base_pipeline(std::shared_
 	return this;
 }
 
-GraphicsPipelineBuilder* GraphicsPipelineBuilder::add_color_attachment_format(vk::Format format) {
-	this->color_attachment_formats.push_back(format);
-	return this;
-}
-
-GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_depth_attachment_format(vk::Format format) {
-	this->depth_attachment_format = format;
-	return this;
-}
-
-GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_stencil_attachment_format(vk::Format format) {
-	this->stencil_attachment_format = format;
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_subpass(std::shared_ptr<RenderPass> render_pass, uint32_t vk_subpass_index) {
+	this->render_pass = render_pass;
+	this->vk_subpass_index = vk_subpass_index;
 	return this;
 }
 

@@ -2,6 +2,7 @@
 
 #include "Engine/render_backends/progressive/virtual_device.h"
 #include "Engine/logging/logger.h"
+#include "Engine/render_backends/progressive/render_pass.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string>
@@ -88,6 +89,32 @@ public:
 		bool vk_alpha_to_one_enable = false
 	);
 
+	// depth testing
+
+	GraphicsPipelineBuilder* set_depth_test_enable(bool value);
+
+	GraphicsPipelineBuilder* set_depth_write_enable(bool value);
+	
+	GraphicsPipelineBuilder* set_depth_compare_op(vk::CompareOp value);
+
+	GraphicsPipelineBuilder* set_depth_bounds_test_enable(bool value);
+
+	// stencil testing
+
+	GraphicsPipelineBuilder* set_stencil_test_enable(bool value);
+
+	GraphicsPipelineBuilder* set_stencil_op_state_front(vk::StencilOpState value);
+
+	GraphicsPipelineBuilder* set_stencil_op_state_back(vk::StencilOpState value);
+
+	GraphicsPipelineBuilder* set_stencil_min_depth_bounds(float value);
+
+	GraphicsPipelineBuilder* set_stencil_max_depth_bounds(float value);
+
+	// tessellation
+
+	GraphicsPipelineBuilder* set_tessellation_vertices_per_patch(uint32_t count);
+
 	// color blending
 
 	// default is alpha blending
@@ -119,13 +146,9 @@ public:
 
 	GraphicsPipelineBuilder* set_base_pipeline(std::shared_ptr<GraphicsPipeline> base_pipeline);
 
-	// dynamic rendering
+	// render pass
 
-	GraphicsPipelineBuilder* add_color_attachment_format(vk::Format format);
-	
-	GraphicsPipelineBuilder* set_depth_attachment_format(vk::Format format);
-	
-	GraphicsPipelineBuilder* set_stencil_attachment_format(vk::Format format);
+	GraphicsPipelineBuilder* set_subpass(std::shared_ptr<RenderPass> render_pass, uint32_t vk_subpass_index);
 
 	// this builds out the final pipeline
 	std::shared_ptr<GraphicsPipeline> build();
@@ -219,11 +242,30 @@ private:
 
 	// depth test
 
-	bool vk_depth_test_enabled = true;
+	bool vk_depth_test_enable = true;
+
+	bool vk_depth_write_enable = false;
+
+	vk::CompareOp vk_depth_compare_op = vk::CompareOp::eNever;
+
+	bool vk_depth_bounds_test_enable = true;
+
 
 	// stencil test
 
-	bool vk_stencil_test_enabled = true;
+	bool vk_stencil_test_enable = true;
+
+	vk::StencilOpState vk_stencil_op_state_front = {};
+
+	vk::StencilOpState vk_stencil_op_state_back = {};
+
+	float vk_stencil_min_depth_bounds = {};
+
+	float vk_stencil_max_depth_bounds = {};
+
+	// tessellation
+
+	uint32_t vk_tessellation_vertices_per_patch;
 
 	// Color Blending
 
@@ -245,13 +287,11 @@ private:
 
 	std::shared_ptr<GraphicsPipeline> base_graphics_pipeline = nullptr;
 
-	// dynamic rendering
+	// Render pass
 
-	vector<vk::Format> color_attachment_formats;
+	std::shared_ptr<RenderPass> render_pass;
 
-	vk::Format depth_attachment_format = vk::Format::eUndefined;
-
-	vk::Format stencil_attachment_format = vk::Format::eUndefined;
+	uint32_t vk_subpass_index;
 };
 
 
