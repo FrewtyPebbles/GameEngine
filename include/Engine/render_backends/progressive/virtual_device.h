@@ -3,6 +3,7 @@
 #include "Engine/render_backends/progressive/swap_chain.h"
 #include "Engine/state/application_config.h"
 #include "Engine/logging/logger.h"
+#include "Engine/render_backends/progressive/command_pool.h"
 #include <vulkan/vulkan.hpp>
 #include <optional>
 #include <memory>
