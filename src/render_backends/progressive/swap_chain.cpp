@@ -1,7 +1,7 @@
 #include "Engine/render_backends/progressive/swap_chain.h"
 #include "Engine/render_backends/progressive/constants.h"
-#include "Engine/render_backends/progressive/virtual_device.h"
 #include "Engine/render_backends/progressive/graphics_pipeline.h"
+#include "Engine/render_backends/progressive/virtual_device.h"
 #include "Engine/render_backends/progressive/render_pass.h"
 #include <SDL2/SDL_vulkan.h>
 #include <cstdint>
@@ -111,11 +111,11 @@ void SwapChain::create_display_image_views() {
 	this->vk_display_image_views.resize(this->vk_images.size());
 
 	for (size_t i = 0; i < this->vk_images.size(); i++) {
-		this->vk_display_image_views[i] = this->create_image_view(vk::ImageViewType::e2D, i);
+		this->vk_display_image_views[i] = this->create_image_view(vk::ImageViewType::e2D, this->vk_images[i]);
 	}
 }
 
-vk::ImageView SwapChain::create_image_view(vk::ImageViewType type, size_t image_index) {
+vk::ImageView SwapChain::create_image_view(vk::ImageViewType type, vk::Image vk_image) {
 	vk::ImageSubresourceRange createInfoSubresourceRange;
 	createInfoSubresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	createInfoSubresourceRange.baseMipLevel = 0;
@@ -124,7 +124,7 @@ vk::ImageView SwapChain::create_image_view(vk::ImageViewType type, size_t image_
 	createInfoSubresourceRange.layerCount = 1;
 	vk::ImageViewCreateInfo createInfo = vk::ImageViewCreateInfo(
 		{},
-		vk_images[image_index], // TODO: add logic to select images
+		vk_image, // TODO: add logic to select images
 		type,
 		this->vk_image_format,
 		{
@@ -138,15 +138,48 @@ vk::ImageView SwapChain::create_image_view(vk::ImageViewType type, size_t image_
 	return this->device->get_vulkan_device()->createImageView(createInfo);
 }
 
-
-vk::ImageView SwapChain::create_image_view(string label, vk::ImageViewType type, size_t image_index) {
-	vk::ImageView imageView = this->create_image_view(type, image_index);
+vk::ImageView SwapChain::create_image_view(string label, vk::ImageViewType type, vk::Image vk_image) {
+	vk::ImageView imageView = this->create_image_view(type, vk_image);
 	this->vk_image_view_map.insert(std::make_pair(label, imageView));
 	return imageView;
 }
 
 vk::ImageView& SwapChain::get_image_view(string label) {
 	return this->vk_image_view_map[label];
+}
+
+vk::Framebuffer SwapChain::create_framebuffer(std::shared_ptr<RenderPass> render_pass, std::span<const vk::ImageView> attachments, uint32_t layers) {
+	vk::FramebufferCreateInfo frameBufferCreateInfo = vk::FramebufferCreateInfo(
+		{},
+		render_pass->vk_get_render_pass(),
+		attachments,
+		this->vk_extent.width,
+		this->vk_extent.height,
+		layers
+	);
+
+	return this->device->get_vulkan_device()->createFramebuffer(frameBufferCreateInfo);
+}
+
+vk::Framebuffer SwapChain::create_framebuffer(string label, std::shared_ptr<RenderPass> render_pass, std::span<const vk::ImageView> attachments, uint32_t layers) {
+	vk::Framebuffer framebuffer = this->create_framebuffer(render_pass, attachments, layers);
+	this->vk_framebuffer_map.insert(std::make_pair(label, framebuffer));
+	return framebuffer;
+}
+
+void SwapChain::create_display_framebuffers(std::shared_ptr<RenderPass> render_pass) {
+	this->vk_display_framebuffers.resize(this->vk_display_image_views.size());
+	for (size_t i = 0; i < this->vk_display_image_views.size(); i++) {
+		std::array<vk::ImageView, 1> attachments = {
+			this->vk_display_image_views[i]
+		};
+
+		this->vk_display_framebuffers[i] = this->create_framebuffer(render_pass, attachments, 1);
+	}
+}
+
+vk::Framebuffer& SwapChain::get_framebuffer(string label) {
+	return this->vk_framebuffer_map[label];
 }
 
 vk::SurfaceFormatKHR SwapChain::choose_surface_format(const SwapChainSupportDetails& support_details) {
@@ -200,6 +233,15 @@ vk::Extent2D SwapChain::choose_swap_extent(const SwapChainSupportDetails& suppor
 }
 
 void SwapChain::clean_up() {
+	// clean up frame buffers
+	for (auto& framebuffer : this->vk_display_framebuffers) {
+		this->device->get_vulkan_device()->destroyFramebuffer(framebuffer);
+	}
+
+	for (auto& [framebufferName, framebuffer] : this->vk_framebuffer_map) {
+		this->device->get_vulkan_device()->destroyFramebuffer(framebuffer);
+	}
+
 	// clean up graphics pipelines
 	for (const auto& [pipeName, graphicsPipeline] : this->graphics_pipeline_map) {
 		graphicsPipeline->clean_up();
@@ -212,7 +254,7 @@ void SwapChain::clean_up() {
 	for (auto& imageView : this->vk_display_image_views) {
 		this->device->get_vulkan_device()->destroyImageView(imageView);
 	}
-	for (auto& [key, imageView] : this->vk_image_view_map) {
+	for (auto& [imageViewName, imageView] : this->vk_image_view_map) {
 		this->device->get_vulkan_device()->destroyImageView(imageView);
 	}
 	this->device->get_vulkan_device()->destroySwapchainKHR(this->vk_swapchain);
