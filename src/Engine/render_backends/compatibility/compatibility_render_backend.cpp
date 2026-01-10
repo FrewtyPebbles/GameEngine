@@ -1,13 +1,11 @@
 #include "Engine/render_backends/compatibility/compatibility_render_backend.h"
 
 CompatibilityRenderBackend::CompatibilityRenderBackend(
-	ApplicationConfig* application_config,
-	Logger* logger,
+	Tritium::Engine* engine,
 	Uint32 sdl_only_window_flags
 )
 	: RenderBackend(
-		application_config,
-		logger
+		engine
 	)
 {
 	// sdl_window_flags must be set in every constructor to include `SDL_WINDOW_VULKAN`

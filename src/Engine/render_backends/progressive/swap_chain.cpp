@@ -3,6 +3,7 @@
 #include "Engine/render_backends/progressive/graphics_pipeline.h"
 #include "Engine/render_backends/progressive/virtual_device.h"
 #include "Engine/render_backends/progressive/render_pass.h"
+#include "Engine/engine.h"
 #include <SDL2/SDL_vulkan.h>
 #include <cstdint>
 #include <limits>
@@ -15,13 +16,13 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& vk_ph
 	vk_present_modes = vk_physical_device.getSurfacePresentModesKHR(vk_surface);
 }
 
-SwapChain::SwapChain(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, VirtualDevice* device, vk::SurfaceKHR* vk_surface,
+SwapChain::SwapChain(Tritium::Engine* engine, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, VirtualDevice* device, vk::SurfaceKHR* vk_surface,
 	vk::ImageUsageFlags image_usage_bits,
 	// Settings:
 	vk::PresentModeKHR setting_prefered_present_mode,
 	bool setting_stereoscopic
 )
-: sdl_window(sdl_window), vk_physical_device(vk_physical_device), device(device), vk_surface(vk_surface), application_config(application_config), logger(logger) {
+: engine(engine), sdl_window(sdl_window), vk_physical_device(vk_physical_device), device(device), vk_surface(vk_surface) {
 	SwapChainSupportDetails support_details = SwapChainSupportDetails(*vk_physical_device, *vk_surface);
 
 	vk::SurfaceFormatKHR vkSurfaceFormat = choose_surface_format(support_details);
@@ -272,7 +273,7 @@ bool SwapChain::create_graphics_pipelines() {
 
 	/// Create Sub Pass:
 
-	auto subpass1 = RenderPass::Builder::SubpassBuilder("render", this->logger, this->device);
+	RenderPass::Builder::SubpassBuilder subpass1 = RenderPass::Builder::SubpassBuilder("render", this->engine, this->device);
 	subpass1.add_color_attachment_reference(
 		0,
 		vk::ImageLayout::eColorAttachmentOptimal
@@ -281,7 +282,7 @@ bool SwapChain::create_graphics_pipelines() {
 
 	this->render_pass_map.insert(std::make_pair(
 		"render",
-		RenderPass::Builder("render", this->logger, this->device)
+		RenderPass::Builder("render", this->engine, this->device)
 		.add_attachment_description(
 			{},
 			this->vk_image_format,
@@ -301,7 +302,7 @@ bool SwapChain::create_graphics_pipelines() {
 
 	this->graphics_pipeline_map.insert(std::make_pair(
 		"render",
-		GraphicsPipeline::Builder("render", this->logger, this->device)
+		GraphicsPipeline::Builder("render", this->engine, this->device)
 		.add_stage(
 			"shaders/.testing/vert.spv", // for now we are just using .testing since it is gitignored
 			"main",

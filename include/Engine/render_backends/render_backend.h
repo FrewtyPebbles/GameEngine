@@ -7,8 +7,6 @@
 #include <SDL2/SDL.h>
 #include <string>
 #include <vector>
-#include "Engine/logging/logger.h"
-#include "Engine/state/application_config.h"
 
 using std::string;
 using std::vector;
@@ -16,6 +14,10 @@ using std::vector;
 // --- RenderBackend --- 
 // This class is derived to create the progressive and compatibility render backends.
 // ---------------------
+
+namespace Tritium {
+	class Engine;
+};
 
 class RenderBackend {
 
@@ -30,12 +32,8 @@ public:
 // ---
 
 	RenderBackend(
-		ApplicationConfig* application_config,
-		Logger* logger
-	) : 
-		application_config(application_config),
-		logger(logger)
-	{};
+		Tritium::Engine* engine = nullptr
+	);
 	/// default settings?
 
 // ==== Window Functions ====
@@ -88,6 +86,10 @@ public:
 ///// ATTRIBUTES /////
 //////////////////////
 
+	// === Engine Manager ===
+
+	Tritium::Engine* engine;
+
 protected:
 
 /////////////////////
@@ -136,14 +138,6 @@ protected:
 // === Game Loop ===
 
 	bool window_running = false;
-
-// === Engine Data ===
-
-	ApplicationConfig* application_config;
-
-// === Logging ===
-
-	Logger* logger;
 
 private:
 

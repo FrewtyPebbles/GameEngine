@@ -1,4 +1,5 @@
 #include "Engine/render_backends/progressive/command_pool.h"
+#include "Engine/render_backends/progressive/virtual_device.h"
 
 CommandPool::CommandPool(
 	vk::CommandPoolCreateFlags create_flags,

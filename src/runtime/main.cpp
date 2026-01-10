@@ -6,6 +6,7 @@
 #include <iomanip>
 
 #include "Engine/constants.h"
+#include "Engine/engine.h"
 #include <stdexcept>
 #include "Engine/logging/logger.h"
 
@@ -21,7 +22,7 @@ using std::cout, std::endl;
 
 int main(int argc, char** argv)
 {
-	cout << "Runtime starting...   v" << GET_ENGINE_VERSION() << endl;
+	cout << "Runtime starting...  " << ENGINE_NAME << " Engine v" << GET_ENGINE_VERSION() << endl;
 
 	// TODO: Replace this code once game-data loading logic is available.
 	// For now just create a test window.
@@ -40,9 +41,24 @@ int main(int argc, char** argv)
 
 		Logger logger = Logger(logPipes);
 
-		// Create userconfig
+		// Create/start backend
+#ifdef RENDER_BACKEND_PROGRESSIVE
+		ProgressiveRenderBackend renderBackend = ProgressiveRenderBackend(
+			nullptr
+		);
+#endif // RENDER_BACKEND_PROGRESSIVE
 
-		ApplicationConfig applicationConfig = ApplicationConfig(
+#ifdef RENDER_BACKEND_COMPATIBILITY
+		CompatibilityRenderBackend renderBackend = CompatibilityRenderBackend(
+			nullptr
+		);
+#endif // RENDER_BACKEND_COMPATIBILITY
+
+		// Create an engine instance:
+
+		Tritium::Engine engine = Tritium::Engine(
+			&renderBackend,
+			&logger,
 			"TestApp",
 			"This is a test app.",
 			{ "Jane Doe" },
@@ -52,26 +68,9 @@ int main(int argc, char** argv)
 			"dev"
 		);
 
-		// Create/start backend
-#ifdef RENDER_BACKEND_PROGRESSIVE
-		ProgressiveRenderBackend backend = ProgressiveRenderBackend(
-			&applicationConfig,
-			&logger
-		);
-#endif // RENDER_BACKEND_PROGRESSIVE
+		engine.start_window(engine.application_name, 600, 600);
 
-#ifdef RENDER_BACKEND_COMPATIBILITY
-		CompatibilityRenderBackend backend = CompatibilityRenderBackend(
-			&applicationConfig,
-			&logger
-		);
-#endif // RENDER_BACKEND_COMPATIBILITY
-
-
-
-		backend.start_window(applicationConfig.application_name, 600, 600);
-
-		logger.flush();
+		engine.logger->flush();
 	}
 	catch (std::runtime_error error) {
 		std::cerr << "Fatal Error: " << error.what() << "\n";

@@ -1,12 +1,16 @@
 #pragma once
-#include "Engine/render_backends/progressive/constants.h"
-#include "Engine/render_backends/progressive/swap_chain.h"
-#include "Engine/state/application_config.h"
-#include "Engine/logging/logger.h"
-#include "Engine/render_backends/progressive/command_pool.h"
+
 #include <vulkan/vulkan.hpp>
+#include <SDL2/SDL.h>
 #include <optional>
 #include <memory>
+
+namespace Tritium {
+	class Engine;
+};
+
+class SwapChain;
+class CommandPool;
 
 struct QueueFamilyIndices {
 
@@ -27,10 +31,12 @@ struct DeviceQueues {
 
 class VirtualDevice {
 public:
-	VirtualDevice(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
+	VirtualDevice(Tritium::Engine* engine, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
 		// Make this setting something setable by the user:
 		vk::PresentModeKHR prefered_present_mode = vk::PresentModeKHR::eMailbox
 	);
+
+	~VirtualDevice();
 
 	void clean_up();
 
@@ -45,6 +51,8 @@ public:
 	vk::SampleCountFlagBits get_multisampling_samples_fallback(vk::SampleCountFlagBits samples, bool using_depth_testing, bool using_stencil_testing);
 
 	// public attributes
+
+	Tritium::Engine* engine;
 	
 	DeviceQueues queues;
 
@@ -53,6 +61,7 @@ public:
 	vk::PhysicalDeviceFeatures vk_device_features;
 
 	vk::PhysicalDeviceProperties vk_device_properties;
+
 
 private:
 
@@ -72,7 +81,4 @@ private:
 	uint64_t suitability;
 	vk::SurfaceKHR* vk_surface;
 	
-
-	ApplicationConfig* application_config;
-	Logger* logger;
 };

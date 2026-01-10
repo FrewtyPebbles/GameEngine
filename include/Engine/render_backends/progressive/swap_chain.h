@@ -1,6 +1,5 @@
 #pragma once
-#include "Engine/state/application_config.h"
-#include "Engine/logging/logger.h"
+
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <SDL2/SDL.h>
@@ -11,6 +10,10 @@
 using std::vector;
 using std::unordered_map;
 using std::string;
+
+namespace Tritium {
+	class Engine;
+};
 
 class VirtualDevice;
 class GraphicsPipeline;
@@ -25,7 +28,7 @@ struct SwapChainSupportDetails {
 
 class SwapChain {
 public:
-	SwapChain(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, VirtualDevice * device, vk::SurfaceKHR* vk_surface,
+	SwapChain(Tritium::Engine* engine, SDL_Window* sdl_window, vk::PhysicalDevice* vk_physical_device, VirtualDevice * device, vk::SurfaceKHR* vk_surface,
 		vk::ImageUsageFlags image_usage_bits,
 		// This should be optionally user supplied:
 		vk::PresentModeKHR setting_prefered_present_mode = vk::PresentModeKHR::eMailbox,
@@ -47,6 +50,8 @@ public:
 	vk::Framebuffer create_framebuffer(string label, std::shared_ptr<RenderPass> render_pass, std::span<const vk::ImageView> attachments, uint32_t layers);
 
 	vk::Framebuffer& get_framebuffer(string label);
+
+	Tritium::Engine* engine;
 
 	vk::Format vk_image_format;
 	vk::Extent2D vk_extent;
@@ -90,11 +95,6 @@ private:
 
 	vector<vk::Framebuffer> vk_display_framebuffers;
 	unordered_map<string, vk::Framebuffer> vk_framebuffer_map;
-
-
-	
-	ApplicationConfig* application_config;
-	Logger* logger;
 
 	// GRAPHICS PIPELINE
 

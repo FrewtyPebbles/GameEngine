@@ -1,12 +1,16 @@
 #include "Engine/render_backends/progressive/graphics_pipeline.h"
+#include "Engine/engine.h"
+#include "Engine/logging/logger.h"
+#include "Engine/render_backends/progressive/virtual_device.h"
+#include "Engine/render_backends/progressive/render_pass.h"
 #include <fstream>
 
 ///////////////////////////////
 // GRAPHICS PIPELINE BUILDER //
 ///////////////////////////////
 
-GraphicsPipelineBuilder::GraphicsPipelineBuilder(const string& name, Logger* logger, VirtualDevice* device)
-	: name(name), logger(logger), device(device) {
+GraphicsPipelineBuilder::GraphicsPipelineBuilder(const string& name, Tritium::Engine* engine, VirtualDevice* device)
+	: name(name), engine(engine), device(device) {
 
 }
 
@@ -140,7 +144,7 @@ std::shared_ptr<GraphicsPipeline> GraphicsPipelineBuilder::build() {
 	auto [result, vk_pipeline] = this->device->get_vulkan_device()->createGraphicsPipeline({}, graphicsPipelineCreateInfo);
 
 	if (result != vk::Result::eSuccess) {
-		this->logger->log(
+		this->engine->logger->log(
 			"Failed to create graphics pipeline \""
 			+ this->name
 			+ "\" when calling vk::Device::createGraphicsPipeline.",
@@ -152,7 +156,7 @@ std::shared_ptr<GraphicsPipeline> GraphicsPipelineBuilder::build() {
 
 	this->clean_up();
 
-	auto graphics_pipeline = std::make_shared<GraphicsPipeline>(this->logger, this->device, vk_pipeline, pipelineLayout);
+	auto graphics_pipeline = std::make_shared<GraphicsPipeline>(this->engine, this->device, vk_pipeline, pipelineLayout);
 
 	this->render_pass->graphics_pipeline_subpasses.insert(std::make_pair(this->vk_subpass_index, graphics_pipeline));
 	
@@ -262,7 +266,7 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_depth_clamp_enable(bool vk
 	if (this->device->vk_device_features.depthClamp) {
 		this->vk_depth_clamp_enable = vk_depth_clamp_enable;
 	} else {
-		this->logger->log(
+		this->engine->logger->log(
 			"The enabled GPU \""
 			+ std::string(static_cast<const char*>(this->device->vk_device_properties.deviceName))
 			+ "\" does not support depth clamping. Hardware depth clamping will be disabled.",
@@ -297,7 +301,7 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_polygon_mode(vk::PolygonMo
 				polygonModeString = "Line";
 				break;
 		}
-		this->logger->log(
+		this->engine->logger->log(
 			"The enabled GPU \""
 			+ std::string(static_cast<const char*>(this->device->vk_device_properties.deviceName))
 			+ "\" does not support the specified polygon mode \""
@@ -321,7 +325,7 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_line_width(float vk_reques
 		);
 
 		if (vk_request_line_width != this->vk_line_width) {
-			this->logger->log(
+			this->engine->logger->log(
 				"The enabled GPU \"" + std::string(static_cast<const char*>(this->device->vk_device_properties.deviceName)) +
 				"\" does not support " + std::to_string(vk_request_line_width) +
 				"f width lines. Clamping to supported range ["
@@ -335,7 +339,7 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_line_width(float vk_reques
 			);
 		}
 	} else {
-		this->logger->log(
+		this->engine->logger->log(
 			"The enabled GPU \""
 			+ string(static_cast<const char*>(this->device->vk_device_properties.deviceName))
 			+ "\" does not support wide lines. Line width will fall back to 1.0f.",
@@ -391,7 +395,7 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_multisampling(
 	if (this->device->vk_device_features.sampleRateShading || !vk_sample_shading_enable) {
 		this->vk_sample_shading_enable = vk_sample_shading_enable;
 	} else {
-		this->logger->log(
+		this->engine->logger->log(
 			"The enabled GPU \""
 			+ string(static_cast<const char*>(this->device->vk_device_properties.deviceName))
 			+ "\" does not support sample rate shading. Sample rate shading will be disabled.",
@@ -416,7 +420,7 @@ GraphicsPipelineBuilder* GraphicsPipelineBuilder::set_multisampling(
 		// if we failed to enable sample shading rate and the required feature isnt available then
 		// log a warning.
 		if (!this->device->vk_device_features.sampleRateShading && vk_sample_shading_enable) {
-			this->logger->log(
+			this->engine->logger->log(
 				"The enabled GPU \""
 				+ string(static_cast<const char*>(this->device->vk_device_properties.deviceName))
 				+ "\" does not support sample rate shading. Minimum sample shading will fall back to 0.0f.",
@@ -576,8 +580,8 @@ vector<char> GraphicsPipelineBuilder::read_binary(const string& filename) {
 // GRAPHICS PIPELINE //
 ///////////////////////
 
-GraphicsPipeline::GraphicsPipeline(Logger* logger, VirtualDevice* device, vk::Pipeline vk_pipeline, vk::PipelineLayout vk_pipeline_layout)
-: logger(logger), device(device), vk_pipeline(vk_pipeline), vk_pipeline_layout(vk_pipeline_layout) {
+GraphicsPipeline::GraphicsPipeline(Tritium::Engine* engine, VirtualDevice* device, vk::Pipeline vk_pipeline, vk::PipelineLayout vk_pipeline_layout)
+: engine(engine), device(device), vk_pipeline(vk_pipeline), vk_pipeline_layout(vk_pipeline_layout) {
 
 }
 

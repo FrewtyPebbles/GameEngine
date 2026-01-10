@@ -1,5 +1,6 @@
 // See .h file for comment explanations of === header === sections
 #include "Engine/render_backends/render_backend.h"
+#include "Engine/engine.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -7,6 +8,13 @@
 // Simple functions like getters and setters go at the bottom.
 // Organize from most complex at the top to least complex at the bottom.
 // Unless it makes more sense to put a specific function above another.
+
+RenderBackend::RenderBackend(
+	Tritium::Engine* engine
+) :
+	engine(engine)
+{
+};
 
 bool RenderBackend::start_window(string window_title, int window_width, int window_height) {
 	// This function is the function which starts the end user's application.

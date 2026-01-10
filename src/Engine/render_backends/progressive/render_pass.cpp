@@ -1,11 +1,15 @@
 #include "Engine/render_backends/progressive/render_pass.h"
+#include "Engine/render_backends/progressive/virtual_device.h"
+#include "Engine/render_backends/progressive/graphics_pipeline.h"
+#include "Engine/engine.h"
+
 
 /////////////////////////
 // Render Pass Builder //
 /////////////////////////
 
-RenderPassBuilder::RenderPassBuilder(const string& name, Logger* logger, VirtualDevice* device)
-: name(name), logger(logger), device(device) {
+RenderPassBuilder::RenderPassBuilder(const string& name, Tritium::Engine* engine, VirtualDevice* device)
+: name(name), engine(engine), device(device) {
 
 }
 
@@ -32,7 +36,7 @@ std::shared_ptr<RenderPass> RenderPassBuilder::build() {
 
 	auto vk_renderPass = this->device->get_vulkan_device()->createRenderPass(renderPassCreateInfo);
 
-	return std::make_shared<RenderPass>(this->logger, this->device, vk_renderPass);
+	return std::make_shared<RenderPass>(this->engine, this->device, vk_renderPass);
 }
 
 RenderPassBuilder* RenderPassBuilder::add_attachment_description(
@@ -73,8 +77,8 @@ RenderPassBuilder* RenderPassBuilder::add_sub_pass_builder(SubpassBuilder sub_pa
 // Sub Pass //
 //////////////
 
-RenderPassBuilder::SubpassBuilder::SubpassBuilder(const string& name, Logger* logger, VirtualDevice* device)
-: name(name), logger(logger), device(device) {
+RenderPassBuilder::SubpassBuilder::SubpassBuilder(const string& name, Tritium::Engine* engine, VirtualDevice* device)
+: name(name), engine(engine), device(device) {
 
 }
 
@@ -201,8 +205,8 @@ vk::SubpassDescription RenderPassBuilder::SubpassBuilder::build() {
 // Render Pass //
 /////////////////
 
-RenderPass::RenderPass(Logger* logger, VirtualDevice* device, vk::RenderPass vk_render_pass)
-: logger(logger), device(device), vk_render_pass(vk_render_pass) {
+RenderPass::RenderPass(Tritium::Engine* engine, VirtualDevice* device, vk::RenderPass vk_render_pass)
+: engine(engine), device(device), vk_render_pass(vk_render_pass) {
 
 }
 

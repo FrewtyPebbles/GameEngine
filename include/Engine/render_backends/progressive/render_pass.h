@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Engine/logging/logger.h"
-#include "Engine/render_backends/progressive/virtual_device.h"
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <vector>
@@ -12,6 +10,13 @@ using std::vector;
 using std::string;
 using std::map;
 
+namespace Tritium {
+	class Engine;
+};
+
+class GraphicsPipeline;
+class VirtualDevice;
+
 class RenderPass;
 
 class RenderPassBuilder {
@@ -21,7 +26,7 @@ public:
 	class SubpassBuilder {
 	public:
 		friend class RenderPassBuilder;
-		SubpassBuilder(const string& name, Logger* logger, VirtualDevice* device);
+		SubpassBuilder(const string& name, Tritium::Engine* engine, VirtualDevice* device);
 		
 		// attachments
 
@@ -71,7 +76,7 @@ public:
 		vk::SubpassDescription build();
 
 		string name;
-		Logger* logger;
+		Tritium::Engine* engine;
 		VirtualDevice* device;
 
 		// attachments
@@ -124,7 +129,7 @@ public:
 	// END SUBPASS CLASS
 
 
-	RenderPassBuilder(const string& name, Logger* logger, VirtualDevice* device);
+	RenderPassBuilder(const string& name, Tritium::Engine* engine, VirtualDevice* device);
 
 	RenderPassBuilder* add_attachment_description(
 		vk::AttachmentDescriptionFlags flags,
@@ -149,7 +154,7 @@ private:
 
 	string name;
 
-	Logger* logger;
+	Tritium::Engine* engine;
 
 	VirtualDevice* device;
 
@@ -165,7 +170,7 @@ private:
 class RenderPass {
 public:
 	using Builder = RenderPassBuilder;
-	RenderPass(Logger* logger, VirtualDevice* device, vk::RenderPass vk_render_pass);
+	RenderPass(Tritium::Engine* engine, VirtualDevice* device, vk::RenderPass vk_render_pass);
 
 	void clean_up();
 
@@ -174,7 +179,7 @@ public:
 	map<uint32_t, std::shared_ptr<GraphicsPipeline>> graphics_pipeline_subpasses;
 private:
 
-	Logger* logger;
+	Tritium::Engine* engine;
 
 	VirtualDevice* device;
 

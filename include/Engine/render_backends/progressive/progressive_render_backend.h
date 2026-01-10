@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Engine/render_backends/render_backend.h"
-#include "Engine/render_backends/progressive/virtual_device.h"
-#include "Engine/render_backends/progressive/constants.h"
 #include <vulkan/vulkan.hpp>
 #include <map>
 #include <memory>
@@ -12,12 +10,18 @@ using std::map;
 using std::unordered_map;
 using std::string;
 
+namespace Tritium {
+	class Engine;
+};
+
+class VirtualDevice;
 
 // --- ProgressiveRenderBackend --- 
 // This is the most cutting edge rendering backend in the engine.
 // It has the newest features and the worst cross platform support.
 // It supports Windows, Linux, and maybe Android.
 // --------------------------------
+
 
 class ProgressiveRenderBackend : public RenderBackend {
 
@@ -32,8 +36,7 @@ public:
 // ---
 
 	ProgressiveRenderBackend(
-		ApplicationConfig* application_config,
-		Logger* logger,
+		Tritium::Engine* engine = nullptr,
 		Uint32 sdl_only_window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN
 	);
 	/// sdl_window_flags must be set in every constructor to include `SDL_WINDOW_VULKAN`

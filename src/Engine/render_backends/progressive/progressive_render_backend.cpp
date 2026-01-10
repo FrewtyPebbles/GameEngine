@@ -1,6 +1,10 @@
 #include "Engine/render_backends/progressive/progressive_render_backend.h"
 #include "Engine/constants.h"
 #include "Engine/render_backends/progressive/extensions.h"
+#include "Engine/render_backends/progressive/virtual_device.h"
+#include "Engine/render_backends/progressive/constants.h"
+#include "Engine/engine.h"
+#include "Engine/logging/logger.h"
 #include <SDL2/SDL_vulkan.h>
 #include <iostream>
 #include <sstream>
@@ -9,13 +13,11 @@
 // ==== Class Functions ====
 
 ProgressiveRenderBackend::ProgressiveRenderBackend(
-	ApplicationConfig* application_config,
-	Logger* logger,
+	Tritium::Engine* engine,
 	Uint32 sdl_only_window_flags
 )
 	: RenderBackend(
-		application_config,
-		logger
+		engine
 	)
 {
 	// sdl_window_flags must be set in every constructor to include `SDL_WINDOW_VULKAN`
@@ -85,11 +87,11 @@ bool ProgressiveRenderBackend::vk_create_instance() {
 
 	// Set vulkan ApplicationInfo
 	vk::ApplicationInfo vk_ApplicationInfo(
-		this->application_config->application_name.c_str(),
+		this->engine->application_name.c_str(),
 		VK_MAKE_VERSION(
-			this->application_config->application_version_major,
-			this->application_config->application_version_minor,
-			this->application_config->application_version_patch
+			this->engine->application_version_major,
+			this->engine->application_version_minor,
+			this->engine->application_version_patch
 		),
 		ENGINE_NAME,
 		VK_MAKE_VERSION(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR, ENGINE_VERSION_PATCH),
@@ -193,7 +195,7 @@ bool ProgressiveRenderBackend::vk_create_virtual_devices() {
 	}
 
 	for (auto const& [physicalDeviceID, physicalDevice] : this->vk_physical_device_map) {
-		auto virtualDevice = std::make_shared<VirtualDevice>(this->logger, this->application_config, this->sdl_window, physicalDevice, &this->vk_surface);
+		auto virtualDevice = std::make_shared<VirtualDevice>(this->engine, this->sdl_window, physicalDevice, &this->vk_surface);
 		this->virtual_devices.push_back(virtualDevice);
 		this->virtual_device_priority_map.insert(std::make_pair(virtualDevice->get_suitability(), virtualDevice));
 	}
@@ -240,7 +242,7 @@ vk::DebugUtilsMessengerCreateInfoEXT ProgressiveRenderBackend::vk_create_debug_m
 		vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
 		this->vk_handle_debug_messages,
-		this->logger
+		this->engine
 	);
 }
 
@@ -268,7 +270,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL ProgressiveRenderBackend::vk_handle_debug_messa
 	validationLayerMessage << "VULKAN VALIDATION LAYER: " << p_callback_data->pMessage;
 
 	if (logger_void_pointer != nullptr) {
-		Logger* logger = static_cast<Logger*>(logger_void_pointer);
+		Tritium::Engine* engine = static_cast<Tritium::Engine*>(logger_void_pointer);
 
 		Log::Severity logSeverity;
 
@@ -290,7 +292,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL ProgressiveRenderBackend::vk_handle_debug_messa
 			break;
 		}
 
-		logger->log(validationLayerMessage.str(), "rendering", Log::Domain::RENDERING, logSeverity);
+		engine->logger->log(validationLayerMessage.str(), "rendering", Log::Domain::RENDERING, logSeverity);
 		return vk::False;
 	}
 }

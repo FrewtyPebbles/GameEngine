@@ -3,7 +3,7 @@
 #include <array>
 #include <string>
 
-#define ENGINE_NAME "GameEngine"
+#define ENGINE_NAME "Tritium"
 
 #define ENGINE_VERSION_MAJOR 0
 #define ENGINE_VERSION_MINOR 0

@@ -1,4 +1,9 @@
 #include "Engine/render_backends/progressive/virtual_device.h"
+#include "Engine/engine.h"
+#include "Engine/logging/logger.h"
+#include "Engine/render_backends/progressive/swap_chain.h"
+#include "Engine/render_backends/progressive/constants.h"
+#include "Engine/render_backends/progressive/command_pool.h"
 #include <vector>
 #include <stdexcept>
 #include <set>
@@ -37,9 +42,9 @@ bool QueueFamilyIndices::is_complete() const {
 }
 
 
-VirtualDevice::VirtualDevice(Logger* logger, ApplicationConfig* application_config, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
+VirtualDevice::VirtualDevice(Tritium::Engine* engine, SDL_Window* sdl_window, vk::PhysicalDevice vk_physical_device, vk::SurfaceKHR* vk_surface,
 	vk::PresentModeKHR prefered_present_mode)
-: sdl_window(sdl_window), vk_physical_device(vk_physical_device), suitability(0), vk_surface(vk_surface), application_config(application_config), logger(logger) {
+: engine(engine), sdl_window(sdl_window), vk_physical_device(vk_physical_device), suitability(0), vk_surface(vk_surface) {
 	suitability = this->vk_measure_physical_device_suitability();
 
 	// This populates the queue family indices
@@ -49,9 +54,12 @@ VirtualDevice::VirtualDevice(Logger* logger, ApplicationConfig* application_conf
 	this->vk_create_logical_device(queueFamilyIndices);
 
 	// create the swapchain
-	this->swapchain = std::make_unique<SwapChain>(this->logger, this->application_config, this->sdl_window, &this->vk_physical_device, this, this->vk_surface, vk::ImageUsageFlagBits::eColorAttachment, prefered_present_mode);
+	this->swapchain = std::make_unique<SwapChain>(this->engine, this->sdl_window, &this->vk_physical_device, this, this->vk_surface, vk::ImageUsageFlagBits::eColorAttachment, prefered_present_mode);
 
 }
+
+//  This is required for the smart pointers to be deleted properly
+VirtualDevice::~VirtualDevice() = default;
 
 void VirtualDevice::clean_up() {
 	this->swapchain->clean_up();
@@ -233,7 +241,7 @@ vk::SampleCountFlagBits VirtualDevice::get_multisampling_samples_fallback(vk::Sa
 		else if (supportedSampleCounts & vk::SampleCountFlagBits::e2 && samples > vk::SampleCountFlagBits::e2)
 			fallbackSampleCount = vk::SampleCountFlagBits::e2;
 
-		this->logger->log(
+		this->engine->logger->log(
 			"The enabled GPU \""
 			+ string(static_cast<const char*>(this->vk_device_properties.deviceName))
 			+ "\" does not support "

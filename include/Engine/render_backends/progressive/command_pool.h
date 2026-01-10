@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Engine/render_backends/progressive/virtual_device.h"
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <unordered_map>
@@ -10,6 +9,8 @@
 using std::string;
 using std::unordered_map;
 using std::vector;
+
+class VirtualDevice;
 
 // TODO : Create a multithreaded "RenderJob" class which is linked to a thread and
 // has its own set of command pools for all the queue family indexes.

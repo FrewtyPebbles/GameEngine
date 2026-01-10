@@ -98,9 +98,9 @@ list(REMOVE_ITEM RUNTIME_SOURCES
 # Glob remove files for other render backend
 
 if(RENDER_BACKEND STREQUAL "progressive")
-    list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "render_backends/compatibility/.*\\.cpp")
+    list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "Engine/render_backends/compatibility/.*\\.cpp")
 elseif(RENDER_BACKEND STREQUAL "compatibility")
-    list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "render_backends/progressive/.*\\.cpp")
+    list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "Engine/render_backends/progressive/.*\\.cpp")
 endif()
 
 # --- EDITOR SOURCES ---
@@ -115,9 +115,9 @@ list(REMOVE_ITEM EDITOR_SOURCES
 # Glob remove files for other render backend
 
 if(RENDER_BACKEND STREQUAL "progressive")
-    list(FILTER EDITOR_SOURCES EXCLUDE REGEX "render_backends/compatibility/.*\\.cpp")
+    list(FILTER EDITOR_SOURCES EXCLUDE REGEX "Engine/render_backends/compatibility/.*\\.cpp")
 elseif(RENDER_BACKEND STREQUAL "compatibility")
-    list(FILTER EDITOR_SOURCES EXCLUDE REGEX "render_backends/progressive/.*\\.cpp")
+    list(FILTER EDITOR_SOURCES EXCLUDE REGEX "Engine/render_backends/progressive/.*\\.cpp")
 endif()
 
 # --- CREATE EXECUTABLE TARGETS ---

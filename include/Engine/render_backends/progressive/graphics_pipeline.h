@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Engine/render_backends/progressive/virtual_device.h"
-#include "Engine/logging/logger.h"
-#include "Engine/render_backends/progressive/render_pass.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string>
@@ -12,6 +9,13 @@
 using std::vector;
 using std::string;
 using std::deque;
+
+namespace Tritium {
+	class Engine;
+};
+
+class VirtualDevice;
+class RenderPass;
 
 // === NOTES ===
 
@@ -26,7 +30,7 @@ class GraphicsPipeline;
 class GraphicsPipelineBuilder {
 public:
 	// Creates the graphics pipeline builder
-	GraphicsPipelineBuilder(const string& name, Logger* logger, VirtualDevice* device);
+	GraphicsPipelineBuilder(const string& name, Tritium::Engine* engine, VirtualDevice* device);
 
 	// BUILDER FUNCTIONS
 	// These are used to build the pipeline
@@ -169,7 +173,7 @@ private:
 
 	string name;
 
-	Logger* logger;
+	Tritium::Engine* engine;
 
 	VirtualDevice* device;
 
@@ -299,7 +303,7 @@ class GraphicsPipeline {
 public:
 	using Builder = GraphicsPipelineBuilder;
 
-	GraphicsPipeline(Logger* logger, VirtualDevice* device, vk::Pipeline vk_pipeline, vk::PipelineLayout vk_pipeline_layout);
+	GraphicsPipeline(Tritium::Engine* engine, VirtualDevice* device, vk::Pipeline vk_pipeline, vk::PipelineLayout vk_pipeline_layout);
 
 	void clean_up();
 
@@ -307,7 +311,7 @@ public:
 
 private:
 
-	Logger* logger;
+	Tritium::Engine* engine;
 	VirtualDevice* device;
 
 	vk::Pipeline vk_pipeline;
