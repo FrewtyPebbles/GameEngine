@@ -22,7 +22,7 @@ using std::cout, std::endl;
 
 int main(int argc, char** argv)
 {
-	cout << "Runtime starting...  " << ENGINE_NAME << " Engine v" << GET_ENGINE_VERSION() << endl;
+	cout << "Runtime starting...  \n\n" << ENGINE_NAME << " Engine v" << GET_ENGINE_VERSION() << "\n" << endl;
 
 	// TODO: Replace this code once game-data loading logic is available.
 	// For now just create a test window.
@@ -41,17 +41,27 @@ int main(int argc, char** argv)
 
 		Logger logger = Logger(logPipes);
 
+		for (auto logPipe : logPipes) {
+			cout << " - Logging to \"" << logPipe->name << "\"" << endl;
+		}
+
 		// Create/start backend
 #ifdef RENDER_BACKEND_PROGRESSIVE
 		ProgressiveRenderBackend renderBackend = ProgressiveRenderBackend(
 			nullptr
 		);
+
+		cout << " - Using Progressive Render Backend" << endl;
+
 #endif // RENDER_BACKEND_PROGRESSIVE
 
 #ifdef RENDER_BACKEND_COMPATIBILITY
 		CompatibilityRenderBackend renderBackend = CompatibilityRenderBackend(
 			nullptr
 		);
+		
+		cout << " - Using Compatibility Render Backend" << endl;
+
 #endif // RENDER_BACKEND_COMPATIBILITY
 
 		// Create an engine instance:
@@ -71,6 +81,8 @@ int main(int argc, char** argv)
 		engine.start_window(engine.application_name, 600, 600);
 
 		engine.logger->flush();
+
+		cout << "\nRuntime stopped." << endl;
 	}
 	catch (std::runtime_error error) {
 		std::cerr << "Fatal Error: " << error.what() << "\n";
