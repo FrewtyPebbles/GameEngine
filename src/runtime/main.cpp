@@ -52,8 +52,8 @@ int main(int argc, char** argv)
 
 		ThreadPool::Pool threadPool = ThreadPool::Pool(5, std::thread::hardware_concurrency() / 2);
 		
-		// add 1 to the threadcount for the logger which has its own dedicated thread
-		cout << " - Using " << threadPool.thread_count + 1 << " threads" << endl;
+		// add 2 to the threadcount for the logger which has its own dedicated thread and the main thread
+		cout << " - Using " << threadPool.thread_count + 2 << " threads" << endl;
 
 		// Create render backend
 #ifdef RENDER_BACKEND_PROGRESSIVE
